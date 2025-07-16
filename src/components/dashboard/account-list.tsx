@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText, Mail, Send, Check } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import * as React from 'react';
 
@@ -42,34 +42,47 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   }
 
   const handleLoginClick = async (account: Account) => {
-    // The button is disabled if these are missing, but this is a safeguard.
-    if (!account.access_token || !account.refresh_token) {
-      console.error("Missing login details for account", account);
+    try {
+      // Fetch fresh login details from the backend
+      const response = await fetch(`/api/account/${account.id}/login-details`);
+      if (!response.ok) {
+        throw new Error("Could not fetch login details. The account might not be fully verified.");
+      }
+      const loginDetails = await response.json();
+
+      if (!loginDetails.access_token || !loginDetails.refresh_token) {
+        throw new Error("Fetched login details are incomplete.");
+      }
+
+      const loginLoaderUrl = `/login-loader.html?access_token=${encodeURIComponent(loginDetails.access_token)}&refresh_token=${encodeURIComponent(loginDetails.refresh_token)}`;
+      window.open(loginLoaderUrl, '_blank');
+
+    } catch (error: any) {
+      console.error("Login failed for account", account, error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Access or refresh token is missing for this account.",
+        description: error.message || "An unexpected error occurred.",
       });
-      return;
     }
-
-    // Generate the loader URL with the tokens
-    const loginLoaderUrl = `/login-loader.html?access_token=${encodeURIComponent(account.access_token)}&refresh_token=${encodeURIComponent(account.refresh_token)}`;
-    
-    // Open the new tab
-    window.open(loginLoaderUrl, '_blank');
   };
 
   const getStatusBadge = (status: Account['status']) => {
     switch (status) {
       case 'verified':
-        return <Badge className="bg-accent text-accent-foreground hover:bg-accent/80"><CheckCircle2 className="mr-1 h-3 w-3" />Verified</Badge>;
-      case 'created':
-        return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />Created</Badge>;
+        return <Badge className="bg-green-500 text-white hover:bg-green-500/80"><CheckCircle2 className="mr-1 h-3 w-3" />Verified</Badge>;
       case 'failed':
         return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" />Failed</Badge>;
       case 'pending':
         return <Badge variant="outline"><Clock className="mr-1 h-3 w-3" />Pending</Badge>;
+      case 'credentials_generated':
+        return <Badge variant="secondary"><Check className="mr-1 h-3 w-3" />Generated</Badge>;
+      case 'verification_link_sent':
+        return <Badge variant="secondary"><Send className="mr-1 h-3 w-3" />Link Sent</Badge>;
+      case 'email_received':
+        return <Badge variant="secondary"><Mail className="mr-1 h-3 w-3" />Email Received</Badge>;
+      default:
+        return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />{status}</Badge>;
     }
   };
 
@@ -84,30 +97,31 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead>Username</TableHead>
+                  <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {accounts.map((account) => {
-                  const isLoginReady = account.status === 'verified' && account.access_token && account.refresh_token;
+                  const isLoginReady = account.status === 'verified';
+                  const isFailed = account.status === 'failed';
                   
                   return (
                     <TableRow key={account.id}>
                       <TableCell className="font-medium">{account.id}</TableCell>
-                      <TableCell>{account.username}</TableCell>
+                      <TableCell>{account.email}</TableCell>
                       <TableCell>{getStatusBadge(account.status)}</TableCell>
                       <TableCell className="text-right space-x-2">
-                        {account.status === 'failed' && account.errorLog && (
+                        {isFailed && account.errorLog && (
                           <Button variant="outline" size="sm" onClick={() => onTroubleshoot(account.errorLog as string)}>
                             <Wrench className="mr-2 h-4 w-4" />
                             Analyze Error
                           </Button>
                         )}
-                        {account.status === 'verified' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)} disabled={!isLoginReady}>
+                        {isLoginReady && (
+                          <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)}>
                             <LogIn className="mr-2 h-4 w-4" />
                             Login
                           </Button>

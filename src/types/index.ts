@@ -1,10 +1,19 @@
-export type AccountStatus = 'pending' | 'created' | 'verified' | 'failed';
+export type AccountStatus = 'pending' | 'credentials_generated' | 'verification_link_sent' | 'email_received' | 'verified' | 'failed' | 'created'; // Added 'created' for compatibility with old mock
 
 export interface Account {
   id: number;
-  username: string;
+  email: string;
+  full_name: string;
+  status: AccountStatus;
   access_token?: string;
   refresh_token?: string;
-  status: AccountStatus;
   errorLog?: string;
+}
+
+// Represents the structure of the SSE progress update from the backend
+export interface ProgressUpdate {
+    accountId: number;
+    email: string;
+    status: AccountStatus;
+    message: string;
 }
