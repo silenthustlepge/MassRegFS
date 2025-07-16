@@ -122,7 +122,9 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
                     patterns = [
                         r'(https?://[a-zA-Z0-9.-]+\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)',
                         r'(https://[^/]+/auth/v1/verify\?token=[^&"\'\s<>]+)',
-                        r'(https?://[^\s]+/auth/v1/verify[^\s<>"\']+)'
+                        r'(https?://[^\s]+/auth/v1/verify[^\s<>"\']+)',
+                        r'href="([^"]+)"[^>]*>.*?[Cc]onfirm',  # Look for href with "confirm" text
+                        r'<a[^>]+href="([^"]+)"[^>]*>.*?[Cc]onfirm',  # Another pattern for confirmation links
                     ]
                     
                     for pattern in patterns:
