@@ -47,6 +47,10 @@ export default function Home() {
     setIsProcessing(true);
     setTotalSignups(count);
     
+    // It's often better to refetch accounts at the start of a new process
+    // to ensure the list is clean and up-to-date.
+    await fetchAccounts();
+    
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {

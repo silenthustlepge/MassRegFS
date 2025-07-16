@@ -66,7 +66,7 @@ async def send_progress_update(data: dict):
     await progress_queue.put(json.dumps(data))
 
 @app.post("/api/start-signups")
-async def start_signups(count: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def start_signups(count: int, background_tasks: BackgroundTasks):
     """Initiates the mass account signup process."""
     logger.info(f"Received request to start signup for {count} accounts.")
     async def run_signups():
@@ -75,12 +75,13 @@ async def start_signups(count: int, background_tasks: BackgroundTasks, db: Sessi
             # Get a new DB session for each worker task
             db_session = SessionLocal()
             try:
+                # The worker (signup_and_verify_account) is now responsible for closing its own session.
                 background_tasks.add_task(signup_and_verify_account, db_session, temp_mail_client, progress_queue)
                 # Give a slight delay between starting tasks to avoid overwhelming
                 await asyncio.sleep(0.1)
             except Exception as e:
                 logger.exception(f"Error scheduling task {i+1}. Aborting.")
-                db_session.close() # Ensure session is closed on error
+                db_session.close() # Ensure session is closed on scheduling error
                 break
 
 
@@ -147,7 +148,7 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
 
         if account.status != 'verified' or not account.access_token:
             logger.warning(f"Attempted to get login details for non-verified account id: {account_id}")
-            raise HTTPException(status_code=404, detail="Account not verified or tokens not available.")
+            raise HTTPException(status_code=400, detail="Account not verified or tokens not available.")
 
         logger.info(f"Successfully fetched login details for account id: {account_id}")
         return {"access_token": account.access_token, "refresh_token": account.refresh_token}
@@ -163,5 +164,3 @@ if __name__ == "__main__":
     import uvicorn
     logger.info("Starting Uvicorn server.")
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-    

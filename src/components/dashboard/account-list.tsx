@@ -28,10 +28,13 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const handleLoginClick = async (account: Account) => {
     try {
       const response = await fetch(`/api/account/${account.id}/login-details`);
+      const resJson = await response.json();
+      
       if (!response.ok) {
-        throw new Error("Could not fetch login details. The account might not be fully verified yet.");
+        throw new Error(resJson.detail || "Could not fetch login details. The account might not be fully verified yet.");
       }
-      const loginDetails = await response.json();
+      
+      const loginDetails = resJson;
 
       if (!loginDetails.access_token || !loginDetails.refresh_token) {
         throw new Error("Login details are incomplete. Please try again later.");
@@ -69,7 +72,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
     }
   };
 
-  const sortedAccounts = [...accounts].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+  const sortedAccounts = [...accounts].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
 
   return (
     <>

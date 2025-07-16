@@ -172,7 +172,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         # Use logger.exception to automatically capture traceback
         logger.exception(f"Error during account signup/verification for email {email}")
         
-        if account:
+        if account and account.id:
             account.status = 'failed'
             account.error_log = full_error_log # Store the full error log
             db.commit()
@@ -195,6 +195,3 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         if db:
             logger.debug(f"Closing worker db session for account {email}")
             db.close()
-
-
-    
