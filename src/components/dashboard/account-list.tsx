@@ -120,12 +120,10 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                             Analyze Error
                           </Button>
                         )}
-                        {isLoginReady && (
-                          <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)}>
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Login
-                          </Button>
-                        )}
+                        <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)} disabled={!isLoginReady}>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Login
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
