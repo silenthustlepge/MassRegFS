@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev src",
+    "build": "cd src && next build",
+    "start": "cd src && next start",
+    "lint": "cd src && next lint",
+    "typecheck": "cd src && tsc --noEmit"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.13.0",
