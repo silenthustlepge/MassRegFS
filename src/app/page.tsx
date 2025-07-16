@@ -10,6 +10,7 @@ import { ErrorAnalysisDialog } from '@/components/dashboard/error-analysis-dialo
 import { Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// The backend server runs on port 8000
 const API_BASE_URL = 'http://localhost:8000';
 
 export default function Home() {
@@ -19,7 +20,7 @@ export default function Home() {
   const [errorDialog, setErrorDialog] = React.useState<{ open: boolean; log?: string }>({ open: false });
   const { toast } = useToast();
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = React.useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/accounts`);
       if (!response.ok) {
@@ -36,17 +37,19 @@ export default function Home() {
         description: error.message || "Could not connect to the backend to fetch accounts. Please ensure the backend server is running."
       });
     }
-  };
+  }, [toast]);
 
   React.useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [fetchAccounts]);
 
   const handleStartProcess = async (count: number) => {
     if (isProcessing) return;
 
     setIsProcessing(true);
     setTotalSignups(count);
+    // Clear previous results for a fresh start
+    setAccounts([]);
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/start-signups?count=${count}`, { method: 'POST' });
@@ -66,21 +69,24 @@ export default function Home() {
             const existingAccountIndex = prev.findIndex(a => a.id === progress.accountId);
             
             if (existingAccountIndex > -1) {
+              // Update existing account
               const newAccounts = [...prev];
               newAccounts[existingAccountIndex] = {
                  ...newAccounts[existingAccountIndex],
                  status: progress.status,
-                 errorLog: progress.message
+                 errorLog: progress.status === 'failed' ? progress.message : newAccounts[existingAccountIndex].errorLog,
               };
               return newAccounts;
             } else if (progress.accountId !== -1) {
+              // Add new account
               const newAccount: Account = {
                 id: progress.accountId,
                 email: progress.email,
                 full_name: progress.full_name,
                 status: progress.status,
-                errorLog: progress.message,
+                errorLog: progress.status === 'failed' ? progress.message : undefined,
               };
+              // Add to the top of the list
               return [newAccount, ...prev];
             }
             return prev;
@@ -91,6 +97,7 @@ export default function Home() {
             if (completedCount >= count) {
               eventSource.close();
               setIsProcessing(false);
+              // A final fetch to ensure data consistency
               setTimeout(() => fetchAccounts(), 1000); 
             }
           }
@@ -140,7 +147,7 @@ export default function Home() {
         </header>
         <div className="space-y-8">
           <SignupControlPanel onStartProcess={handleStartProcess} isProcessing={isProcessing} />
-          {(isProcessing || accounts.length > 0) && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
+          {(isProcessing || totalSignups > 0) && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
           <AccountList accounts={accounts} onTroubleshoot={handleTroubleshoot} />
         </div>
       </main>

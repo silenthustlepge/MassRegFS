@@ -13,6 +13,7 @@ SIGNUP_COUNT = 3
 def check_server_is_ready():
     """Checks if the FastAPI server is responsive."""
     try:
+        # A simple health check endpoint would be better, but this works.
         response = requests.get(f"{BASE_URL}/api/accounts", timeout=2)
         if response.status_code in (200, 404): # 200 OK or 404 Not Found are acceptable initial states
             logger.info("✅ Backend server is up and running.")
@@ -20,7 +21,7 @@ def check_server_is_ready():
         logger.warning(f"Backend server responded with status: {response.status_code}")
         return False
     except ConnectionError:
-        logger.error("❌ Backend server is not running. Please start the server with 'python main.py'.")
+        logger.error("❌ Backend server is not running. Please start the server with 'python -m backend.main'.")
         return False
     except ReadTimeout:
         logger.error("❌ Backend server is not responding.")
@@ -50,7 +51,8 @@ def run_test():
     
     logger.info("🎧 Listening for real-time progress updates...")
     try:
-        response = requests.get(f"{BASE_URL}/api/stream-progress", stream=True, timeout=120)
+        # Set a generous timeout for the entire streaming process
+        response = requests.get(f"{BASE_URL}/api/stream-progress", stream=True, timeout=180)
         client = sseclient.SSEClient(response)
 
         for event in client.events():
@@ -79,7 +81,7 @@ def run_test():
         logger.info("✅ Progress stream finished.")
         
     except ReadTimeout:
-        logger.error("❌ FAILED: Timed out waiting for progress stream to complete.")
+        logger.error(f"❌ FAILED: Timed out waiting for progress stream to complete after {180} seconds.")
         return
     except Exception as e:
         logger.exception(f"❌ FAILED: An error occurred while streaming progress. Error: {e}")

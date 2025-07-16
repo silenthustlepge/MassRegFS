@@ -27,8 +27,12 @@ class Account(Base):
 
 def create_db_tables():
     """Creates the database tables if they don't exist."""
-    Base.metadata.create_all(bind=engine)
+    if not os.path.exists(DATABASE_FILE):
+        print("Database file not found, creating tables...")
+        Base.metadata.create_all(bind=engine)
+    else:
+        print("Database file found.")
 
 if __name__ == "__main__":
     create_db_tables()
-    print("Database tables created.")
+    print("Database tables created or already exist.")

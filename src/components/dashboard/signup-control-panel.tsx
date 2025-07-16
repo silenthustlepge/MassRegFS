@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -15,11 +16,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormDescription } from '@/components/ui/form';
 import { PlayCircle } from 'lucide-react';
 
 const formSchema = z.object({
-  signupCount: z.coerce.number().min(1, 'Please enter at least 1.').max(100, 'Cannot exceed 100.'),
+  signupCount: z.coerce
+    .number({ invalid_type_error: 'Please enter a number.'})
+    .min(1, 'Please enter at least 1.')
+    .max(100, 'For performance reasons, you cannot request more than 100 at a time.'),
 });
 
 interface SignupControlPanelProps {
@@ -57,8 +61,11 @@ export function SignupControlPanel({ onStartProcess, isProcessing }: SignupContr
                 <FormItem>
                   <Label htmlFor="signupCount">Number of Signups</Label>
                   <FormControl>
-                    <Input id="signupCount" type="number" placeholder="e.g., 50" {...field} disabled={isProcessing} />
+                    <Input id="signupCount" type="number" placeholder="e.g., 10" {...field} disabled={isProcessing} />
                   </FormControl>
+                  <FormDescription>
+                    Enter a number between 1 and 100.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

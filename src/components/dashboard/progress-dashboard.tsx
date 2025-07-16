@@ -5,6 +5,7 @@ import type { Account } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Users, UserCheck, UserX } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface ProgressDashboardProps {
   accounts: Account[];
@@ -12,27 +13,34 @@ interface ProgressDashboardProps {
 }
 
 export function ProgressDashboard({ accounts, totalSignups }: ProgressDashboardProps) {
-  if (totalSignups === 0) return null;
+  const { attemptedCount, verifiedCount, failedCount } = useMemo(() => {
+    let attempted = 0;
+    let verified = 0;
+    let failed = 0;
+    
+    // Use a Set to count unique account IDs attempted.
+    const attemptedIds = new Set<number>();
+    accounts.forEach(a => {
+      attemptedIds.add(a.id);
+      if (a.status === 'verified') verified++;
+      if (a.status === 'failed') failed++;
+    });
 
-  const attemptedCount = accounts.length;
-  const verifiedCount = accounts.filter(a => a.status === 'verified').length;
-  const failedCount = accounts.filter(a => a.status === 'failed').length;
+    attempted = attemptedIds.size;
 
-  const totalProgress = totalSignups > 0 ? (attemptedCount / totalSignups) * 100 : 0;
-  
-  // We consider a successful creation one that is not in a failed state
-  const successfulCreations = attemptedCount - failedCount;
-  
-  // Verified progress is out of the accounts that were attempted
-  const verifiedProgress = totalSignups > 0 ? (verifiedCount / totalSignups) * 100 : 0;
-  
-  const failureProgress = totalSignups > 0 ? (failedCount / totalSignups) * 100 : 0;
+    return { attemptedCount: attempted, verifiedCount: verified, failedCount: failed };
+  }, [accounts]);
 
+  const completedCount = verifiedCount + failedCount;
+  
+  const overallProgress = totalSignups > 0 ? (completedCount / totalSignups) * 100 : 0;
+  const successRate = attemptedCount > 0 ? (verifiedCount / attemptedCount) * 100 : 0;
+  const failureRate = attemptedCount > 0 ? (failedCount / attemptedCount) * 100 : 0;
 
   const metrics = [
-    { title: 'Overall Progress', count: attemptedCount, progress: totalProgress, Icon: Users, description: `${attemptedCount} of ${totalSignups} attempts started`},
-    { title: 'Accounts Verified', count: verifiedCount, progress: verifiedProgress, Icon: UserCheck, description: `${verifiedCount} of ${totalSignups} accounts verified` },
-    { title: 'Failures', count: failedCount, progress: failureProgress, Icon: UserX, description: `${failedCount} of ${totalSignups} attempts failed` }
+    { title: 'Overall Progress', count: completedCount, total: totalSignups, progress: overallProgress, Icon: Users, description: `${completedCount} of ${totalSignups} signups complete`},
+    { title: 'Accounts Verified', count: verifiedCount, total: attemptedCount, progress: successRate, Icon: UserCheck, description: `${verifiedCount} of ${attemptedCount} attempts successful` },
+    { title: 'Failures', count: failedCount, total: attemptedCount, progress: failureRate, Icon: UserX, description: `${failedCount} of ${attemptedCount} attempts failed` }
   ];
   
   return (
@@ -48,7 +56,7 @@ export function ProgressDashboard({ accounts, totalSignups }: ProgressDashboardP
             <p className="text-xs text-muted-foreground">
               {metric.description}
             </p>
-            <Progress value={metric.progress} className={`mt-4 ${metric.title === 'Failures' ? '[&>div]:bg-destructive' : ''}`} />
+            <Progress value={metric.progress} className={`mt-4 ${metric.title === 'Failures' && metric.count > 0 ? '[&>div]:bg-destructive' : ''}`} />
           </CardContent>
         </Card>
       ))}

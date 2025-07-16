@@ -9,12 +9,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import SessionLocal, engine, Account, Base, create_db_tables
-from worker import signup_and_verify_account
-from temp_mail_client import TempMailClient
-from config import TEMP_MAIL_API_BASE_URL
-from schemas import Account as AccountSchema
-from logging_config import logger # Import the configured logger
+from .database import SessionLocal, engine, Account, create_db_tables
+from .worker import signup_and_verify_account
+from .temp_mail_client import TempMailClient
+from .config import TEMP_MAIL_API_BASE_URL
+from .schemas import Account as AccountSchema
+from .logging_config import logger # Import the configured logger
 
 # Initialize database tables on startup
 create_db_tables()
@@ -39,7 +39,7 @@ async def log_requests(request: Request, call_next):
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins, including the Next.js dev server on port 3000
+    allow_origins=["*"],  # Allows all origins, including the Next.js dev server
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -69,7 +69,6 @@ async def start_signups(count: int, background_tasks: BackgroundTasks):
         for i in range(count):
             logger.info(f"Scheduling signup task {i+1}/{count}")
             # The worker is now responsible for its own DB session.
-            # Do NOT pass the session from here.
             background_tasks.add_task(signup_and_verify_account, temp_mail_client, progress_queue)
             await asyncio.sleep(0.1)
 
@@ -103,15 +102,8 @@ def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
     try:
         logger.info("Fetching all accounts from the database.")
-        stmt = select(
-            Account.id,
-            Account.email,
-            Account.full_name,
-            Account.status,
-            Account.error_log.label("errorLog") 
-        ).order_by(Account.id.desc())
-        
-        results = db.execute(stmt).mappings().all()
+        # The frontend sorts the data, no need to sort here.
+        results = db.query(Account).all()
         logger.info(f"Successfully fetched {len(results)} accounts.")
         return results
     except Exception as e:
@@ -124,8 +116,7 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
     logger.info(f"Fetching login details for account_id: {account_id}")
     try:
-        stmt = select(Account.access_token, Account.refresh_token, Account.status).where(Account.id == account_id)
-        account = db.execute(stmt).mappings().first()
+        account = db.query(Account).filter(Account.id == account_id).first()
 
         if not account:
             logger.warning(f"Account not found for id: {account_id}")

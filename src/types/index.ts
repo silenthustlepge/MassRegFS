@@ -1,3 +1,4 @@
+
 export type AccountStatus = 'pending' | 'credentials_generated' | 'verification_link_sent' | 'email_received' | 'verified' | 'failed';
 
 export interface Account {

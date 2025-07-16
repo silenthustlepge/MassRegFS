@@ -9,7 +9,7 @@ TEMP_MAIL_DOMAINS = [
     "jxpomup.com",
     "ibolinva.com",
     "wyoxafp.com",
-    "osxofulk.com",
+osxofulk.com",
     "jkotypc.com",
     "cmhvzylmfc.com",
     "zudpck.com",

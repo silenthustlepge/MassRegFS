@@ -1,4 +1,7 @@
+
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/analyze-error-logs.ts';
+// This file is the entrypoint for Genkit's dev server.
+// It imports the flows so they are registered with Genkit.
+import './flows/analyze-error-logs.ts';

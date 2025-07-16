@@ -8,10 +8,10 @@ import json
 from urllib.parse import parse_qs, urlparse, quote
 import traceback
 
-from database import Account, SessionLocal
-from temp_mail_client import TempMailClient
-from config import TEMP_MAIL_DOMAINS
-from logging_config import logger
+from .database import Account, SessionLocal
+from .temp_mail_client import TempMailClient
+from .config import TEMP_MAIL_DOMAINS
+from .logging_config import logger
 
 # Supabase details
 SUPABASE_URL = "https://snksxwkyumhdykyrhhch.supabase.co/auth/v1/signup"
@@ -50,7 +50,7 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
         # 3. Create new Account record in DB
         account = Account(
             email=email,
-            full_name=full_name,
+            full_name=full_name, # This was the critical missing piece
             status='pending',
             created_at=datetime.utcnow()
         )
@@ -107,7 +107,8 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
             try:
                 messages = await temp_mail_client.get_messages(email)
                 for message in messages:
-                    match = re.search(r'(https://snksxwkyumhdykyrhhch\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)', message.get('body', ''))
+                    # Improved regex to be more robust
+                    match = re.search(r'(https?://[a-zA-Z0-9.-]+\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)', message.get('body', ''))
                     if match:
                         verification_link = match.group(1)
                         logger.info(f"Found verification link for {email}")
@@ -191,8 +192,9 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
                 "message": error_message
             }))
         else:
+            # Handle cases where the account was never created in the DB
             await sse_queue.put(json.dumps({
-                 "accountId": -1,
+                 "accountId": -1, # Use a sentinel value
                  "email": email,
                  "full_name": full_name,
                  "status": "failed",

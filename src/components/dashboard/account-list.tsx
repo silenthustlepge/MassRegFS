@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText, Mail, Send, Check } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import * as React from 'react';
 
 interface AccountListProps {
   accounts: Account[];
@@ -42,7 +41,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
         throw new Error("Login details are incomplete. Please try again later.");
       }
 
-      // This uses a relative path which is fine, as it serves a static file from the public folder.
+      // This uses a relative path to a static file in the public folder.
       const loginLoaderUrl = `/login-loader.html?access_token=${encodeURIComponent(loginDetails.access_token)}&refresh_token=${encodeURIComponent(loginDetails.refresh_token)}`;
       window.open(loginLoaderUrl, '_blank');
 
@@ -71,68 +70,70 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
       case 'email_received':
         return <Badge variant="secondary"><Mail className="mr-1 h-3 w-3" />Email Received</Badge>;
       default:
+        // A fallback for any unexpected status
         return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />{status}</Badge>;
     }
   };
 
+  // The parent component now handles sorting, but we can ensure it here too.
   const sortedAccounts = [...accounts].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline text-2xl">Account List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sortedAccounts.length === 0 ? (
-             <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
-                <FileText className="h-12 w-12 mb-4" />
-                <p className="font-semibold">No accounts to display.</p>
-                <p className="text-sm">Use the control panel above to start generating accounts.</p>
-              </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedAccounts.map((account) => {
-                    if (!account.id) return null; // Prevent rendering if account ID is missing
-                    const isLoginReady = account.status === 'verified';
-                    const isFailed = account.status === 'failed';
-                    
-                    return (
-                      <TableRow key={account.id}>
-                        <TableCell className="font-medium">{account.id}</TableCell>
-                        <TableCell>{account.email}</TableCell>
-                        <TableCell>{getStatusBadge(account.status)}</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          {isFailed && account.errorLog && (
-                            <Button variant="outline" size="sm" onClick={() => onTroubleshoot(account.errorLog as string)}>
-                              <Wrench className="mr-2 h-4 w-4" />
-                              Analyze Error
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)} disabled={!isLoginReady}>
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Login
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline text-2xl">Account List</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {sortedAccounts.length === 0 ? (
+           <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
+              <FileText className="h-12 w-12 mb-4" />
+              <p className="font-semibold">No accounts to display.</p>
+              <p className="text-sm">Use the control panel above to start generating accounts.</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Full Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedAccounts.map((account) => {
+                  if (!account.id) return null; // Prevent rendering if account ID is missing
+                  const isLoginReady = account.status === 'verified';
+                  const isFailed = account.status === 'failed';
+                  
+                  return (
+                    <TableRow key={account.id}>
+                      <TableCell className="font-medium">{account.id}</TableCell>
+                      <TableCell>{account.email}</TableCell>
+                      <TableCell>{account.full_name}</TableCell>
+                      <TableCell>{getStatusBadge(account.status)}</TableCell>
+                      <TableCell className="text-right space-x-2">
+                        {isFailed && account.errorLog && (
+                          <Button variant="outline" size="sm" onClick={() => onTroubleshoot(account.errorLog as string)}>
+                            <Wrench className="mr-2 h-4 w-4" />
+                            Analyze Error
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)} disabled={!isLoginReady}>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Login
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

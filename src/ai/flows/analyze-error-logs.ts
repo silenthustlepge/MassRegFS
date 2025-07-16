@@ -1,3 +1,4 @@
+
 // This file is machine-generated - edit at your own risk!
 
 'use server';
@@ -16,13 +17,13 @@ import {z} from 'genkit';
 const AnalyzeErrorLogsInputSchema = z.object({
   errorLogs: z
     .string()
-    .describe('The error logs related to account creation.'),
+    .describe('The full error logs related to an account creation failure, including any stack traces.'),
 });
 export type AnalyzeErrorLogsInput = z.infer<typeof AnalyzeErrorLogsInputSchema>;
 
 const AnalyzeErrorLogsOutputSchema = z.object({
-  analysis: z.string().describe('The analysis of the error logs.'),
-  suggestedFixes: z.string().describe('Suggested fixes for the errors.'),
+  analysis: z.string().describe('A step-by-step analysis of what went wrong based on the error logs. Be concise and clear.'),
+  suggestedFixes: z.string().describe('Actionable, specific suggestions for how to fix the underlying problem. This could involve code changes or configuration adjustments.'),
 });
 export type AnalyzeErrorLogsOutput = z.infer<typeof AnalyzeErrorLogsOutputSchema>;
 
@@ -34,12 +35,12 @@ const prompt = ai.definePrompt({
   name: 'analyzeErrorLogsPrompt',
   input: {schema: AnalyzeErrorLogsInputSchema},
   output: {schema: AnalyzeErrorLogsOutputSchema},
-  prompt: `You are an expert troubleshooter specializing in account creation errors.
+  prompt: `You are an expert software troubleshooter specializing in Python FastAPI backends, aiohttp, and Supabase authentication.
 
-You will analyze the provided error logs and suggest potential fixes.
+You will analyze the provided error logs from a user's application and provide a clear, concise analysis and suggested fixes. Assume the user is a developer who needs to understand the root cause.
 
 Error Logs:
-{{errorLogs}}`,
+{{{errorLogs}}}`,
 });
 
 const analyzeErrorLogsFlow = ai.defineFlow(
