@@ -97,26 +97,54 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
         }))
         logger.info(f"Waiting for verification email for {email}")
 
-        # 7. Poll for Email
-        polling_timeout = 90
-        poll_interval = 3
+        # 7. Poll for Email with more robust polling
+        polling_timeout = 180  # Increased to 3 minutes
+        poll_interval = 5      # Increased to 5 seconds
         start_time = asyncio.get_event_loop().time()
         verification_link = None
+        
+        logger.info(f"Starting email polling for {email} with {polling_timeout}s timeout...")
 
         while asyncio.get_event_loop().time() - start_time < polling_timeout:
             try:
                 messages = await temp_mail_client.get_messages(email)
+                logger.debug(f"Retrieved {len(messages)} messages for {email}")
+                
                 for message in messages:
-                    # Improved regex to be more robust
-                    match = re.search(r'(https?://[a-zA-Z0-9.-]+\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)', message.get('body', ''))
-                    if match:
-                        verification_link = match.group(1)
-                        logger.info(f"Found verification link for {email}")
+                    message_body = message.get('body', '')
+                    message_subject = message.get('subject', '')
+                    
+                    # Log first few characters of message for debugging
+                    logger.debug(f"Message subject: {message_subject[:50]}...")
+                    logger.debug(f"Message body preview: {message_body[:100]}...")
+                    
+                    # Try multiple regex patterns to catch verification links
+                    patterns = [
+                        r'(https?://[a-zA-Z0-9.-]+\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)',
+                        r'(https://[^/]+/auth/v1/verify\?token=[^&"\'\s<>]+)',
+                        r'(https?://[^\s]+/auth/v1/verify[^\s<>"\']+)'
+                    ]
+                    
+                    for pattern in patterns:
+                        match = re.search(pattern, message_body)
+                        if match:
+                            verification_link = match.group(1)
+                            logger.info(f"Found verification link for {email}: {verification_link[:50]}...")
+                            break
+                    
+                    if verification_link:
                         break
+                        
                 if verification_link:
                     break
+                    
             except Exception as e:
                 logger.warning(f"Polling error for {email}: {e}")
+                
+            # Show progress in logs
+            elapsed = asyncio.get_event_loop().time() - start_time
+            logger.info(f"Email polling for {email}: {elapsed:.1f}s elapsed, {polling_timeout - elapsed:.1f}s remaining")
+            
             await asyncio.sleep(poll_interval)
 
         if not verification_link:
