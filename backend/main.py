@@ -112,8 +112,35 @@ def get_all_accounts(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Database query for accounts failed.")
 
 
-@app.get("/api/account/{account_id}/login-details")
-def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
+@app.get("/api/account/{account_id}/verification-link")
+def get_account_verification_link(account_id: int, db: Session = Depends(get_db)):
+    """Fetches the verification link for a specific account."""
+    logger.info(f"Fetching verification link for account_id: {account_id}")
+    try:
+        account = db.query(Account).filter(Account.id == account_id).first()
+
+        if not account:
+            logger.warning(f"Account not found for id: {account_id}")
+            raise HTTPException(status_code=404, detail="Account not found.")
+
+        # For accounts that are pending or failed, we'll try to get the verification link
+        # This would need to be stored in the database when the email is received
+        # For now, we'll return a placeholder indicating manual verification is needed
+        
+        return {
+            "message": "Please check your email for the verification link",
+            "email": account.email,
+            "status": account.status,
+            "instructions": "Click the confirmation link in your email to verify your account."
+        }
+
+    except Exception as e:
+        logger.exception(f"Error fetching verification link for account {account_id}")
+        if not isinstance(e, HTTPException):
+            raise HTTPException(status_code=500, detail="Failed to fetch verification link.")
+        raise e
+
+
     """Fetches login tokens for a specific account."""
     logger.info(f"Fetching login details for account_id: {account_id}")
     try:
