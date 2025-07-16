@@ -46,6 +46,7 @@ export default function Home() {
     setIsProcessing(true);
     setTotalSignups(count);
     
+    // Clear only failed accounts from the previous run
     setAccounts(prev => prev.filter(acc => acc.status !== 'failed'));
     
     try {
