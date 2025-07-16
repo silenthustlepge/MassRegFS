@@ -22,12 +22,14 @@ interface AccountListProps {
   onTroubleshoot: (errorLog: string) => void;
 }
 
+const API_BASE_URL = 'http://localhost:8000';
+
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const { toast } = useToast();
 
   const handleLoginClick = async (account: Account) => {
     try {
-      const response = await fetch(`/api/account/${account.id}/login-details`);
+      const response = await fetch(`${API_BASE_URL}/api/account/${account.id}/login-details`);
       const resJson = await response.json();
       
       if (!response.ok) {
@@ -40,6 +42,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
         throw new Error("Login details are incomplete. Please try again later.");
       }
 
+      // This uses a relative path which is fine, as it serves a static file from the public folder.
       const loginLoaderUrl = `/login-loader.html?access_token=${encodeURIComponent(loginDetails.access_token)}&refresh_token=${encodeURIComponent(loginDetails.refresh_token)}`;
       window.open(loginLoaderUrl, '_blank');
 

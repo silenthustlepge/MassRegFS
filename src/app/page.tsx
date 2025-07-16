@@ -10,6 +10,8 @@ import { ErrorAnalysisDialog } from '@/components/dashboard/error-analysis-dialo
 import { Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const API_BASE_URL = 'http://localhost:8000';
+
 export default function Home() {
   const [accounts, setAccounts] = React.useState<Account[]>([]);
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -19,7 +21,7 @@ export default function Home() {
 
   const fetchAccounts = async () => {
     try {
-      const response = await fetch('/api/accounts');
+      const response = await fetch(`${API_BASE_URL}/api/accounts`);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch accounts. Status: ${response.status}. Message: ${errorText}`);
@@ -47,13 +49,13 @@ export default function Home() {
     setTotalSignups(count);
     
     try {
-      const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/api/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to start signup process');
       }
 
-      const eventSource = new EventSource('/api/stream-progress');
+      const eventSource = new EventSource(`${API_BASE_URL}/api/stream-progress`);
       let completedCount = 0;
       
       eventSource.onmessage = (event) => {
