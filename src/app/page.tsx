@@ -10,8 +10,8 @@ import { ErrorAnalysisDialog } from '@/components/dashboard/error-analysis-dialo
 import { Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Use environment variable for backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+// Use relative path for API calls - Kubernetes ingress handles routing
+const API_BASE_URL = '/api';
 
 export default function Home() {
   const [accounts, setAccounts] = React.useState<Account[]>([]);
