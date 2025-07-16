@@ -14,6 +14,7 @@ export interface Account {
 export interface ProgressUpdate {
     accountId: number;
     email: string;
+    full_name: string;
     status: AccountStatus;
     message: string;
 }

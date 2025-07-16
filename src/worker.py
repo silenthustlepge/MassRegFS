@@ -24,6 +24,7 @@ fake = Faker()
 async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClient, sse_queue: asyncio.Queue):
     account = None
     email = "N/A"
+    full_name = "N/A"
     try:
         # 1. Generate email
         logger.info("Starting new account signup task.")
@@ -57,6 +58,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         await sse_queue.put(json.dumps({
             "accountId": account.id,
             "email": account.email,
+            "full_name": account.full_name,
             "status": "credentials_generated",
             "message": "Credentials generated, starting signup."
         }))
@@ -84,6 +86,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         await sse_queue.put(json.dumps({
             "accountId": account.id,
             "email": account.email,
+            "full_name": account.full_name,
             "status": "verification_link_sent",
             "message": "Signup request sent, waiting for email."
         }))
@@ -118,6 +121,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         await sse_queue.put(json.dumps({
             "accountId": account.id,
             "email": account.email,
+            "full_name": account.full_name,
             "status": "email_received",
             "message": "Verification email received, verifying account."
         }))
@@ -159,6 +163,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         await sse_queue.put(json.dumps({
             "accountId": account.id,
             "email": account.email,
+            "full_name": account.full_name,
             "status": "verified",
             "message": "Account successfully verified!"
         }))
@@ -178,6 +183,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
             await sse_queue.put(json.dumps({
                 "accountId": account.id,
                 "email": account.email,
+                "full_name": account.full_name,
                 "status": "failed",
                 "message": error_message # Send concise message to frontend
             }))
@@ -186,6 +192,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
             await sse_queue.put(json.dumps({
                  "accountId": -1, # Use a placeholder ID
                  "email": email,
+                 "full_name": full_name,
                  "status": "failed",
                  "message": error_message
             }))
