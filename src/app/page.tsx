@@ -11,7 +11,7 @@ import { Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // The backend server runs on port 8000
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8001';
 
 export default function Home() {
   const [accounts, setAccounts] = React.useState<Account[]>([]);
