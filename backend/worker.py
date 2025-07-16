@@ -130,9 +130,32 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
                     for pattern in patterns:
                         match = re.search(pattern, message_body)
                         if match:
-                            verification_link = match.group(1)
-                            logger.info(f"Found verification link for {email}: {verification_link[:50]}...")
-                            break
+                            potential_link = match.group(1)
+                            
+                            # If it's a direct supabase link, use it
+                            if 'supabase.co' in potential_link and '/auth/v1/verify' in potential_link:
+                                verification_link = potential_link
+                                logger.info(f"Found direct verification link for {email}: {verification_link[:50]}...")
+                                break
+                            # If it's a wrapped redirect link, try to resolve it
+                            elif 'http' in potential_link and 'auth/v1/verify' not in potential_link:
+                                try:
+                                    logger.info(f"Trying to resolve redirect link for {email}: {potential_link[:50]}...")
+                                    async with aiohttp.ClientSession() as resolve_session:
+                                        async with resolve_session.get(potential_link, allow_redirects=False, timeout=10) as resolve_response:
+                                            if resolve_response.status in [301, 302, 303, 307, 308]:
+                                                resolved_link = resolve_response.headers.get('Location')
+                                                if resolved_link and 'supabase.co' in resolved_link and '/auth/v1/verify' in resolved_link:
+                                                    verification_link = resolved_link
+                                                    logger.info(f"Resolved verification link for {email}: {verification_link[:50]}...")
+                                                    break
+                                except Exception as resolve_error:
+                                    logger.warning(f"Failed to resolve redirect link for {email}: {resolve_error}")
+                            else:
+                                # Fallback: assume it's a verification link
+                                verification_link = potential_link
+                                logger.info(f"Using fallback verification link for {email}: {verification_link[:50]}...")
+                                break
                     
                     if verification_link:
                         break
