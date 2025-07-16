@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText } from 'lucide-react';
 import {
-  AlertDialog,
+  AlertDialog, AlertDialogTrigger,
   AlertDialogAction,
   AlertDialogContent,
   AlertDialogDescription,
@@ -49,6 +49,16 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
     );
   }
 
+  const handleLoginClick = (account: Account) => {
+    if (account.email && account.password && account.access_token && account.refresh_token) {
+      const loginUrl = `/login-loader.html?email=${encodeURIComponent(account.email)}&password=${encodeURIComponent(account.password)}&access_token=${encodeURIComponent(account.access_token)}&refresh_token=${encodeURIComponent(account.refresh_token)}`;
+      window.open(loginUrl, '_blank');
+    } else {
+      console.error("Missing login details for account", account);
+      // Optionally show a user-friendly error message
+    }
+  };
+
   const getStatusBadge = (status: Account['status']) => {
     switch (status) {
       case 'verified':
@@ -77,7 +87,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                   <TableHead>Username</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
+                </TableRow> 
               </TableHeader>
               <TableBody>
                 {accounts.map((account) => (
@@ -92,11 +102,11 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                           Analyze Error
                         </Button>
                       )}
-                      {(account.status === 'created' || account.status === 'verified') && (
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedAccount(account)}>
+                      {account.status === 'verified' && (
+                         <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)}>
                           <LogIn className="mr-2 h-4 w-4" />
-                          Login Info
-                        </Button>
+                          Login
+                         </Button>
                       )}
                     </TableCell>
                   </TableRow>
@@ -109,13 +119,13 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
       
       <AlertDialog open={!!selectedAccount} onOpenChange={(open) => !open && setSelectedAccount(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
+          <AlertDialogHeader> 
             <AlertDialogTitle className="font-headline">Login Information</AlertDialogTitle>
             <AlertDialogDescription>
               Use these credentials to log in. This information is for demonstration purposes.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="text-sm space-y-2 font-mono">
+          <div className="text-sm space-y-2 font-mono"> 
             <div><strong>Username:</strong> {selectedAccount?.username}</div>
             <div><strong>Password:</strong> {selectedAccount?.password || 'N/A'}</div>
             <div><strong>Token:</strong> <span className="bg-muted px-1 py-0.5 rounded">{selectedAccount?.token || 'N/A'}</span></div>
