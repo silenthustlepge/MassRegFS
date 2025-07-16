@@ -36,7 +36,6 @@ export default function Home() {
     }
   };
 
-  // Fetch all accounts on initial load
   React.useEffect(() => {
     fetchAccounts();
   }, []);
@@ -47,7 +46,6 @@ export default function Home() {
     setIsProcessing(true);
     setTotalSignups(count);
     
-    // Clear only failed accounts from previous runs
     setAccounts(prev => prev.filter(acc => acc.status !== 'failed'));
     
     try {
@@ -68,7 +66,6 @@ export default function Home() {
             const existingAccountIndex = prev.findIndex(a => a.id === progress.accountId);
             
             if (existingAccountIndex > -1) {
-              // Update existing account
               const newAccounts = [...prev];
               const existingAccount = newAccounts[existingAccountIndex];
               newAccounts[existingAccountIndex] = {
@@ -80,15 +77,13 @@ export default function Home() {
               };
               return newAccounts;
             } else if (progress.accountId !== -1) {
-              // Add new account
               const newAccount: Account = {
                 id: progress.accountId,
                 email: progress.email,
+                full_name: progress.full_name,
                 status: progress.status,
                 errorLog: progress.message,
-                full_name: progress.full_name,
               };
-              // Add to the list, keeping it sorted by ID descending
               return [...prev, newAccount].sort((a, b) => b.id - a.id);
             }
             return prev;
@@ -96,11 +91,9 @@ export default function Home() {
 
           if (['verified', 'failed'].includes(progress.status) || (progress.status === 'failed' && progress.accountId === -1)) {
             completedCount++;
-            // CRITICAL FIX: Use `totalSignups` from state, not `count` from a closed-over scope.
-            if (completedCount >= totalSignups) {
+            if (completedCount >= count) {
               eventSource.close();
               setIsProcessing(false);
-              // Fetch final state from DB to ensure consistency after a short delay
               setTimeout(() => fetchAccounts(), 1000); 
             }
           }

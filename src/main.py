@@ -68,9 +68,7 @@ async def start_signups(count: int, background_tasks: BackgroundTasks):
     async def run_signups():
         for i in range(count):
             logger.info(f"Scheduling signup task {i+1}/{count}")
-            # The worker is now responsible for creating and closing its own session.
             background_tasks.add_task(signup_and_verify_account, temp_mail_client, progress_queue)
-            # Give a slight delay between starting tasks to avoid overwhelming
             await asyncio.sleep(0.1)
 
 
@@ -85,7 +83,6 @@ async def stream_progress():
     async def event_generator():
         while True:
             try:
-                # Wait for a new item in the queue
                 message = await progress_queue.get()
                 yield f"data: {message}\n\n"
                 progress_queue.task_done()
@@ -95,7 +92,7 @@ async def stream_progress():
             except Exception as e:
                 logger.exception("Error in SSE generator.")
                 yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n\n"
-                await asyncio.sleep(1) # Prevent tight loop on errors
+                await asyncio.sleep(1) 
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -104,13 +101,12 @@ def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
     try:
         logger.info("Fetching all accounts from the database.")
-        # CRITICAL FIX: Select only the columns defined in AccountSchema to prevent ValidationError
         stmt = select(
             Account.id,
             Account.email,
             Account.full_name,
             Account.status,
-            Account.error_log.label("errorLog") # Use label to match schema field name
+            Account.error_log.label("errorLog") 
         ).order_by(Account.id.desc())
         
         results = db.execute(stmt).mappings().all()
@@ -118,7 +114,6 @@ def get_all_accounts(db: Session = Depends(get_db)):
         return results
     except Exception as e:
         logger.exception("Failed to fetch accounts from database.")
-        # Re-raise as HTTPException to be handled by FastAPI's error handling
         raise HTTPException(status_code=500, detail="Database query for accounts failed.")
 
 
