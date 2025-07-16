@@ -94,7 +94,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
                 messages = await temp_mail_client.get_messages(email)
                 for message in messages:
                     # Look for the verification link in the email body (adjust regex based on actual email content)
-                    match = re.search(r'(https://snksxwkyumhdykyrhhch\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)', message.get('text', ''))
+                    match = re.search(r'(https://snksxwkyumhdykyrhhch\.supabase\.co/auth/v1/verify\?token=[^&"\'\s<>]+)', message.get('body', ''))
                     if match:
                         verification_link = match.group(1)
                         break

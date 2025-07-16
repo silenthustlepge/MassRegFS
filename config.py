@@ -1,4 +1,4 @@
-TEMP_MAIL_API_BASE_URL = "http://localhost:9002"
+TEMP_MAIL_API_BASE_URL = "https://gazelle-rare-newly.ngrok-free.app"
 TEMP_MAIL_DOMAINS = [
     "qejjyl.com",
     "zvvzuv.com",
