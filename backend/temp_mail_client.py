@@ -1,6 +1,6 @@
 
 import aiohttp
-from .logging_config import logger
+from logging_config import logger
 
 class TempMailClient:
     def __init__(self, base_url: str):
