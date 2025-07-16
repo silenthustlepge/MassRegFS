@@ -165,6 +165,24 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                             Analyze Error
                           </Button>
                         )}
+                        
+                        {/* Copy Verification Link Button - Available for accounts that have received verification links */}
+                        {(account.status === 'verification_link_sent' || account.status === 'email_received' || account.status === 'failed') && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleCopyVerificationLink(account)}
+                            disabled={copyingLinks.has(account.id)}
+                          >
+                            {copyingLinks.has(account.id) ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Copy className="mr-2 h-4 w-4" />
+                            )}
+                            Copy Link
+                          </Button>
+                        )}
+                        
                         <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)} disabled={!isLoginReady}>
                           <LogIn className="mr-2 h-4 w-4" />
                           Login
