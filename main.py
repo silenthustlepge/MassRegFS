@@ -5,7 +5,7 @@ from typing import List
 from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, literal_column
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal, engine, Account, Base
@@ -88,10 +88,19 @@ async def stream_progress():
 def get_verified_accounts(db: Session = Depends(get_db)):
     """Fetches all successfully verified accounts."""
     accounts = db.execute(
-        select(Account.id, Account.email, Account.full_name, Account.status)
+        select(
+            Account.id,
+            Account.email,
+            Account.full_name,
+            Account.status,
+            literal_column("NULL").label("errorLog") # Explicitly add errorLog field
+        )
         .where(Account.status == "verified")
     ).fetchall()
-    return [{"id": acc.id, "email": acc.email, "full_name": acc.full_name, "status": acc.status} for acc in accounts]
+    return [
+        {"id": acc.id, "email": acc.email, "full_name": acc.full_name, "status": acc.status, "errorLog": acc.errorLog}
+        for acc in accounts
+    ]
 
 
 @app.get("/api/account/{account_id}/login-details")

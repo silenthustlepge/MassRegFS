@@ -14,20 +14,18 @@ export function ProgressDashboard({ accounts, totalSignups }: ProgressDashboardP
   if (totalSignups === 0) return null;
 
   const attemptedCount = accounts.length;
-  const createdCount = accounts.filter(a => a.status !== 'pending' && a.status !== 'failed').length;
   const verifiedCount = accounts.filter(a => a.status === 'verified').length;
   const failedCount = accounts.filter(a => a.status === 'failed').length;
 
   const totalProgress = totalSignups > 0 ? (attemptedCount / totalSignups) * 100 : 0;
-  // We consider "created" as any step past generation, up to verified.
-  const createdProgress = totalSignups > 0 ? (createdCount / totalSignups) * 100 : 0;
-  // Verified progress is out of the accounts that were successfully created (not failed)
+  // We consider a successful creation one that is not in a failed state
   const successfulCreations = attemptedCount - failedCount;
+  // Verified progress is out of the accounts that were successfully attempted (not failed)
   const verifiedProgress = successfulCreations > 0 ? (verifiedCount / successfulCreations) * 100 : 0;
 
   const metrics = [
     { title: 'Overall Progress', count: attemptedCount, progress: totalProgress, Icon: Users, description: `${attemptedCount} of ${totalSignups} attempts started`},
-    { title: 'Accounts Verified', count: verifiedCount, progress: verifiedProgress, Icon: UserCheck, description: `${verifiedCount} of ${successfulCreations} successful accounts verified`},
+    { title: 'Accounts Verified', count: verifiedCount, progress: verifiedProgress, Icon: UserCheck, description: successfulCreations > 0 ? `${verifiedCount} of ${successfulCreations} successful accounts verified` : 'Waiting for successful accounts...'},
     { title: 'Failures', count: failedCount, progress: totalSignups > 0 ? (failedCount/totalSignups) * 100 : 0, Icon: UserX, description: `${failedCount} of ${totalSignups} attempts failed` }
   ];
   
