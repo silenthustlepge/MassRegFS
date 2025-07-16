@@ -22,7 +22,8 @@ interface AccountListProps {
   onTroubleshoot: (errorLog: string) => void;
 }
 
-const API_BASE_URL = 'https://e2201c8c-46f3-41c2-a0f6-d470b3e0403c.preview.emergentagent.com';
+// Use environment variable for backend URL
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const { toast } = useToast();
