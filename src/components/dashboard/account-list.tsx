@@ -73,7 +73,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
 
   const handleLoginClick = async (account: Account) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/account/${account.id}/login-details`);
+      const response = await fetch(`${API_BASE_URL}/account/${account.id}/login-details`);
       const resJson = await response.json();
       
       if (!response.ok) {
