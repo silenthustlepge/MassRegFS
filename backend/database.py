@@ -23,6 +23,7 @@ class Account(Base):
     access_token = Column(Text, nullable=True)
     refresh_token = Column(Text, nullable=True)
     error_log = Column(Text, nullable=True)
+    verification_link = Column(Text, nullable=True)  # Store the verification link
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 def create_db_tables():
