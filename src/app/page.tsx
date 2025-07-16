@@ -66,12 +66,12 @@ export default function Home() {
             if (existingAccountIndex > -1) {
               const newAccounts = [...prev];
               newAccounts[existingAccountIndex] = {
-                 ...newAccounts[existingAccountIndex], // Keep existing fields
-                 ...progress, // Overwrite with new data
+                 ...newAccounts[existingAccountIndex],
+                 status: progress.status,
+                 errorLog: progress.message
               };
               return newAccounts;
             } else if (progress.accountId !== -1) {
-              // This is a new account, add it to the list.
               const newAccount: Account = {
                 id: progress.accountId,
                 email: progress.email,
@@ -79,8 +79,7 @@ export default function Home() {
                 status: progress.status,
                 errorLog: progress.message,
               };
-              // Add to the list and sort to keep it stable
-              return [...prev, newAccount].sort((a, b) => b.id - a.id);
+              return [newAccount, ...prev];
             }
             return prev;
           });
@@ -151,3 +150,5 @@ export default function Home() {
     </>
   );
 }
+
+    

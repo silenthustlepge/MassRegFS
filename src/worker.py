@@ -202,3 +202,5 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
         if db:
             logger.debug(f"Closing worker db session for account {email}")
             db.close()
+
+    
