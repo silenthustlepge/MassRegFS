@@ -26,6 +26,49 @@ const API_BASE_URL = 'https://d2e40730-100a-4052-8641-d9f3096c55cd.preview.emerg
 
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const { toast } = useToast();
+  const [copyingLinks, setCopyingLinks] = useState<Set<number>>(new Set());
+
+  const handleCopyVerificationLink = async (account: Account) => {
+    if (copyingLinks.has(account.id)) return;
+
+    setCopyingLinks(prev => new Set(prev).add(account.id));
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/account/${account.id}/verification-link`);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.detail || "Failed to fetch verification link");
+      }
+      
+      if (result.verification_link) {
+        await navigator.clipboard.writeText(result.verification_link);
+        toast({
+          title: "Success",
+          description: "Verification link copied to clipboard!",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "No Link Available",
+          description: result.message || "No verification link available for this account",
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to copy verification link:", error);
+      toast({
+        variant: "destructive",
+        title: "Copy Failed",
+        description: error.message || "Failed to copy verification link",
+      });
+    } finally {
+      setCopyingLinks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(account.id);
+        return newSet;
+      });
+    }
+  };
 
   const handleLoginClick = async (account: Account) => {
     try {
