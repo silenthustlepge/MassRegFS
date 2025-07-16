@@ -47,6 +47,9 @@ export default function Home() {
     setIsProcessing(true);
     setTotalSignups(count);
     
+    // Clear only failed accounts from previous runs
+    setAccounts(prev => prev.filter(acc => acc.status !== 'failed'));
+    
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {
@@ -67,11 +70,13 @@ export default function Home() {
             if (existingAccountIndex > -1) {
               // Update existing account
               const newAccounts = [...prev];
+              const existingAccount = newAccounts[existingAccountIndex];
               newAccounts[existingAccountIndex] = {
-                 ...newAccounts[existingAccountIndex], 
+                 ...existingAccount,
+                 email: progress.email || existingAccount.email,
                  status: progress.status, 
                  errorLog: progress.message,
-                 full_name: progress.full_name || newAccounts[existingAccountIndex].full_name,
+                 full_name: progress.full_name || existingAccount.full_name,
               };
               return newAccounts;
             } else if (progress.accountId !== -1) {
@@ -83,17 +88,19 @@ export default function Home() {
                 errorLog: progress.message,
                 full_name: progress.full_name,
               };
-              return [...prev, newAccount];
+              // Add to the list, keeping it sorted by ID descending
+              return [...prev, newAccount].sort((a, b) => b.id - a.id);
             }
             return prev;
           });
 
-          if (['verified', 'failed'].includes(progress.status) || progress.accountId === -1) {
+          if (['verified', 'failed'].includes(progress.status) || (progress.status === 'failed' && progress.accountId === -1)) {
             completedCount++;
-            if (completedCount >= count) {
+            // CRITICAL FIX: Use `totalSignups` from state, not `count` from a closed-over scope.
+            if (completedCount >= totalSignups) {
               eventSource.close();
               setIsProcessing(false);
-              // Fetch final state from DB to ensure consistency
+              // Fetch final state from DB to ensure consistency after a short delay
               setTimeout(() => fetchAccounts(), 1000); 
             }
           }
