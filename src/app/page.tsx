@@ -17,28 +17,27 @@ export default function Home() {
   const [errorDialog, setErrorDialog] = React.useState<{ open: boolean; log?: string }>({ open: false });
   const { toast } = useToast();
 
-  const fetchVerifiedAccounts = async () => {
+  const fetchAccounts = async () => {
     try {
       const response = await fetch('/api/accounts');
       if (!response.ok) {
-        // This will be caught by the .catch block below
         throw new Error(`Failed to fetch accounts. Status: ${response.status}`);
       }
       const data: Account[] = await response.json();
-      setAccounts(data); // Replace state with the source of truth from DB
+      setAccounts(data);
     } catch (error: any) {
-      console.error("Error fetching verified accounts:", error);
+      console.error("Error fetching accounts:", error);
       toast({
         variant: "destructive",
         title: "Network Error",
-        description: "Could not connect to the backend to fetch accounts. Please ensure the backend server is running."
+        description: "Could not connect to the backend to fetch accounts. Please ensure the backend server is running and the database is accessible."
       });
     }
   };
 
-  // Fetch existing accounts on initial load
+  // Fetch all accounts on initial load
   React.useEffect(() => {
-    fetchVerifiedAccounts();
+    fetchAccounts();
   }, []);
 
   const handleStartProcess = async (count: number) => {
@@ -46,8 +45,8 @@ export default function Home() {
 
     setIsProcessing(true);
     setTotalSignups(count);
-    setAccounts([]); // Clear previous accounts for this new batch
-
+    // Don't clear accounts, let the SSE stream update the state
+    
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {
@@ -62,10 +61,16 @@ export default function Home() {
         try {
           const progress: ProgressUpdate = JSON.parse(event.data);
 
-          // If it's a failure for a non-existent account, don't add it.
           if (progress.accountId === -1 && progress.status === 'failed') {
               console.error("A task failed before account creation:", progress.message);
+              // We don't have an ID, so we can't add it to the list.
+              // A toast could be shown here if desired.
               completedCount++;
+              if (completedCount >= count) {
+                 eventSource.close();
+                 setIsProcessing(false);
+                 setTimeout(() => fetchAccounts(), 1000);
+              }
               return;
           }
           
@@ -84,19 +89,17 @@ export default function Home() {
                 email: progress.email,
                 status: progress.status,
                 errorLog: progress.message,
-                full_name: progress.email.split('@')[0], 
+                full_name: progress.email.split('@')[0], // Placeholder name
               }];
             }
           });
 
-          // Check for completion
           if (['verified', 'failed'].includes(progress.status)) {
             completedCount++;
             if (completedCount >= count) {
               eventSource.close();
               setIsProcessing(false);
-              // Final refresh of accounts from DB after a short delay
-              setTimeout(() => fetchVerifiedAccounts(), 1000);
+              setTimeout(() => fetchAccounts(), 1000); // Final refresh
             }
           }
 
@@ -145,8 +148,8 @@ export default function Home() {
         </header>
         <div className="space-y-8">
           <SignupControlPanel onStartProcess={handleStartProcess} isProcessing={isProcessing} />
-          {totalSignups > 0 && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
-          <AccountList accounts={[...accounts].sort((a,b) => (a.id ?? 0) - (b.id ?? 0))} onTroubleshoot={handleTroubleshoot} />
+          {isProcessing && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
+          <AccountList accounts={accounts} onTroubleshoot={handleTroubleshoot} />
         </div>
       </main>
       <ErrorAnalysisDialog 

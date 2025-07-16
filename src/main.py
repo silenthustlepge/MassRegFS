@@ -86,7 +86,7 @@ async def stream_progress():
 
 @app.get("/api/accounts", response_model=List[dict])
 def get_all_accounts(db: Session = Depends(get_db)):
-    """Fetches all verified accounts."""
+    """Fetches all accounts from the database."""
     accounts = db.execute(
         select(
             Account.id,
@@ -94,7 +94,6 @@ def get_all_accounts(db: Session = Depends(get_db)):
             Account.full_name,
             Account.status,
             Account.error_log
-        ).where(Account.status == 'verified') # Filter by status 'verified'
         )
     ).fetchall()
     return [
@@ -108,7 +107,7 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
     account = db.execute(
         select(Account.access_token, Account.refresh_token)
-        .where(Account.id == account_id)
+        .where(Account.id == account_id, Account.status == 'verified')
     ).first()
 
     if account and account.access_token:
