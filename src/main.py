@@ -88,8 +88,15 @@ async def stream_progress():
 @app.get("/api/accounts", response_model=List[AccountSchema])
 def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
-    accounts = db.query(Account).all()
-    # Pydantic will automatically handle the conversion, including missing/null values
+    accounts = db.execute(
+        select(
+            Account.id,
+            Account.email,
+            Account.full_name,
+            Account.status,
+            Account.error_log.label("errorLog")  # Alias error_log to errorLog
+        )
+    ).mappings().all() # Use .mappings().all() to get a list of dicts
     return accounts
 
 
