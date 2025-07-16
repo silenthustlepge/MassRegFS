@@ -20,6 +20,7 @@ class Account(Base):
     status = Column(String, default="pending")
     access_token = Column(Text)
     refresh_token = Column(Text)
+    error_log = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Function to create tables

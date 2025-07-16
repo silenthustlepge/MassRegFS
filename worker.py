@@ -159,18 +159,18 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
     except Exception as e:
         error_message = str(e)
         error_trace = traceback.format_exc()
-        full_error = f"{error_message}\n\nTrace:\n{error_trace}"
-        print(f"Error during account signup/verification for email {email}: {full_error}")
+        full_error_log = f"{error_message}\n\nTrace:\n{error_trace}"
+        print(f"Error during account signup/verification for email {email}: {full_error_log}")
         
         if account:
             account.status = 'failed'
-            # Store error message in DB
+            account.error_log = full_error_log # Store the full error log
             db.commit()
             await sse_queue.put(json.dumps({
                 "accountId": account.id,
                 "email": account.email,
                 "status": "failed",
-                "message": error_message
+                "message": error_message # Send concise message to frontend
             }))
         else:
             # This case handles failure before an account object is even created
