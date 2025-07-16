@@ -46,9 +46,6 @@ export default function Home() {
     setIsProcessing(true);
     setTotalSignups(count);
     
-    // Clear only failed accounts from the previous run
-    setAccounts(prev => prev.filter(acc => acc.status !== 'failed'));
-    
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {
@@ -68,16 +65,13 @@ export default function Home() {
             
             if (existingAccountIndex > -1) {
               const newAccounts = [...prev];
-              const existingAccount = newAccounts[existingAccountIndex];
               newAccounts[existingAccountIndex] = {
-                 ...existingAccount,
-                 email: progress.email || existingAccount.email,
-                 status: progress.status, 
-                 errorLog: progress.message,
-                 full_name: progress.full_name || existingAccount.full_name,
+                 ...newAccounts[existingAccountIndex], // Keep existing fields
+                 ...progress, // Overwrite with new data
               };
               return newAccounts;
             } else if (progress.accountId !== -1) {
+              // This is a new account, add it to the list.
               const newAccount: Account = {
                 id: progress.accountId,
                 email: progress.email,
@@ -85,12 +79,13 @@ export default function Home() {
                 status: progress.status,
                 errorLog: progress.message,
               };
+              // Add to the list and sort to keep it stable
               return [...prev, newAccount].sort((a, b) => b.id - a.id);
             }
             return prev;
           });
 
-          if (['verified', 'failed'].includes(progress.status) || (progress.status === 'failed' && progress.accountId === -1)) {
+          if (['verified', 'failed'].includes(progress.status)) {
             completedCount++;
             if (completedCount >= count) {
               eventSource.close();
