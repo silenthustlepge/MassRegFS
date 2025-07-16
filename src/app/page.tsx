@@ -22,7 +22,7 @@ export default function Home() {
 
   const fetchAccounts = React.useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/accounts`);
+      const response = await fetch(`${API_BASE_URL}/accounts`);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch accounts. Status: ${response.status}. Message: ${errorText}`);
