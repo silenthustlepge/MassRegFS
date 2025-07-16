@@ -21,7 +21,7 @@ interface AccountListProps {
   onTroubleshoot: (errorLog: string) => void;
 }
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://55a83947-7535-4222-82fe-8fa86c662895.preview.emergentagent.com';
 
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const { toast } = useToast();
