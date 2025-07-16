@@ -9,7 +9,7 @@ import json
 from urllib.parse import parse_qs, urlparse, quote
 import traceback
 
-from database import Account
+from database import Account, SessionLocal
 from temp_mail_client import TempMailClient
 from config import TEMP_MAIL_DOMAINS
 from logging_config import logger # Import the configured logger
@@ -21,7 +21,12 @@ REDIRECT_TO = "https://app.emergent.sh/activate" # Supabase redirect URL
 
 fake = Faker()
 
-async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClient, sse_queue: asyncio.Queue):
+async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue: asyncio.Queue):
+    """
+    Worker process to sign up and verify a single account.
+    This function manages its own database session.
+    """
+    db = SessionLocal()
     account = None
     email = "N/A"
     full_name = "N/A"

@@ -72,17 +72,10 @@ async def start_signups(count: int, background_tasks: BackgroundTasks):
     async def run_signups():
         for i in range(count):
             logger.info(f"Scheduling signup task {i+1}/{count}")
-            # Get a new DB session for each worker task
-            db_session = SessionLocal()
-            try:
-                # The worker (signup_and_verify_account) is now responsible for closing its own session.
-                background_tasks.add_task(signup_and_verify_account, db_session, temp_mail_client, progress_queue)
-                # Give a slight delay between starting tasks to avoid overwhelming
-                await asyncio.sleep(0.1)
-            except Exception as e:
-                logger.exception(f"Error scheduling task {i+1}. Aborting.")
-                db_session.close() # Ensure session is closed on scheduling error
-                break
+            # The worker (signup_and_verify_account) is now responsible for creating and closing its own session.
+            background_tasks.add_task(signup_and_verify_account, temp_mail_client, progress_queue)
+            # Give a slight delay between starting tasks to avoid overwhelming
+            await asyncio.sleep(0.1)
 
 
     background_tasks.add_task(run_signups)
@@ -115,7 +108,7 @@ def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
     try:
         logger.info("Fetching all accounts from the database.")
-        result = db.execute(
+        accounts = db.execute(
             select(
                 Account.id,
                 Account.email,
@@ -123,8 +116,7 @@ def get_all_accounts(db: Session = Depends(get_db)):
                 Account.status,
                 Account.error_log.label("errorLog")
             )
-        )
-        accounts = result.mappings().all()
+        ).mappings().all()
         logger.info(f"Successfully fetched {len(accounts)} accounts.")
         return accounts
     except Exception as e:
@@ -138,11 +130,10 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
     logger.info(f"Fetching login details for account_id: {account_id}")
     try:
-        result = db.execute(
+        account = db.execute(
             select(Account.access_token, Account.refresh_token, Account.status)
             .where(Account.id == account_id)
-        )
-        account = result.first()
+        ).first()
 
         if not account:
             logger.warning(f"Account not found for id: {account_id}")
