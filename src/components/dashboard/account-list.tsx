@@ -34,41 +34,56 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
 
     setCopyingLinks(prev => new Set(prev).add(account.id));
     
-    try {
-      const response = await fetch(`${API_BASE_URL}/account/${account.id}/verification-link`);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.detail || "Failed to fetch verification link");
+    const maxRetries = 3;
+    const baseDelay = 500;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/account/${account.id}/verification-link`);
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.detail || "Failed to fetch verification link");
+        }
+        
+        if (result.verification_link) {
+          await navigator.clipboard.writeText(result.verification_link);
+          toast({
+            title: "Success",
+            description: "Verification link copied to clipboard!",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "No Link Available",
+            description: result.message || "No verification link available for this account",
+          });
+        }
+        return; // Success, exit retry loop
+        
+      } catch (error: any) {
+        console.error(`Failed to copy verification link (attempt ${attempt + 1}):`, error);
+        
+        if (attempt === maxRetries - 1) {
+          // Last attempt failed, show error
+          toast({
+            variant: "destructive",
+            title: "Copy Failed",
+            description: error.message || "Failed to copy verification link",
+          });
+        } else {
+          // Wait before retrying
+          const delay = baseDelay * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-      
-      if (result.verification_link) {
-        await navigator.clipboard.writeText(result.verification_link);
-        toast({
-          title: "Success",
-          description: "Verification link copied to clipboard!",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "No Link Available",
-          description: result.message || "No verification link available for this account",
-        });
-      }
-    } catch (error: any) {
-      console.error("Failed to copy verification link:", error);
-      toast({
-        variant: "destructive",
-        title: "Copy Failed",
-        description: error.message || "Failed to copy verification link",
-      });
-    } finally {
-      setCopyingLinks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(account.id);
-        return newSet;
-      });
     }
+    
+    setCopyingLinks(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(account.id);
+      return newSet;
+    });
   };
 
   const handleLoginClick = async (account: Account) => {
