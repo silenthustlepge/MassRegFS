@@ -72,7 +72,9 @@ export default function Home() {
               newAccounts[existingAccountIndex] = {
                  ...newAccounts[existingAccountIndex], 
                  status: progress.status, 
-                 errorLog: progress.message 
+                 errorLog: progress.message,
+                 // Ensure full_name is present
+                 full_name: progress.full_name || newAccounts[existingAccountIndex].full_name,
               };
               return newAccounts;
             } else if (progress.accountId !== -1) {
