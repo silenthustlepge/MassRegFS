@@ -22,7 +22,7 @@ interface AccountListProps {
   onTroubleshoot: (errorLog: string) => void;
 }
 
-const API_BASE_URL = 'https://d2e40730-100a-4052-8641-d9f3096c55cd.preview.emergentagent.com';
+const API_BASE_URL = 'https://e2201c8c-46f3-41c2-a0f6-d470b3e0403c.preview.emergentagent.com';
 
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const { toast } = useToast();

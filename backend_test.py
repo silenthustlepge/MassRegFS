@@ -11,7 +11,7 @@ import sys
 from typing import Dict, Any, List
 
 # Backend URL from the review request
-BACKEND_URL = "https://d2e40730-100a-4052-8641-d9f3096c55cd.preview.emergentagent.com"
+BACKEND_URL = "https://e2201c8c-46f3-41c2-a0f6-d470b3e0403c.preview.emergentagent.com"
 
 class BackendTester:
     def __init__(self, base_url: str):
