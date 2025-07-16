@@ -103,7 +103,10 @@ def get_all_accounts(db: Session = Depends(get_db)):
 @app.get("/api/account/{account_id}/login-details")
 def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
-    account = db.query(Account).filter(Account.id == account_id).first()
+    account = db.execute(
+        select(Account.access_token, Account.refresh_token, Account.status)
+        .where(Account.id == account_id)
+    ).first()
 
     if account and account.access_token and account.status == 'verified':
         return {"access_token": account.access_token, "refresh_token": account.refresh_token}
