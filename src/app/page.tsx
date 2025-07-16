@@ -11,7 +11,7 @@ import { Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Use environment variable for backend URL
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
 export default function Home() {
   const [accounts, setAccounts] = React.useState<Account[]>([]);
