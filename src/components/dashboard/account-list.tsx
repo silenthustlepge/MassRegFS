@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Account } from '@/types';
@@ -43,15 +44,14 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
 
   const handleLoginClick = async (account: Account) => {
     try {
-      // Fetch fresh login details from the backend
       const response = await fetch(`/api/account/${account.id}/login-details`);
       if (!response.ok) {
-        throw new Error("Could not fetch login details. The account might not be fully verified.");
+        throw new Error("Could not fetch login details. The account might not be fully verified yet.");
       }
       const loginDetails = await response.json();
 
       if (!loginDetails.access_token || !loginDetails.refresh_token) {
-        throw new Error("Fetched login details are incomplete.");
+        throw new Error("Login details are incomplete. Please try again later.");
       }
 
       const loginLoaderUrl = `/login-loader.html?access_token=${encodeURIComponent(loginDetails.access_token)}&refresh_token=${encodeURIComponent(loginDetails.refresh_token)}`;

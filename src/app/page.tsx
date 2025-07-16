@@ -8,28 +8,31 @@ import { ProgressDashboard } from '@/components/dashboard/progress-dashboard';
 import { AccountList } from '@/components/dashboard/account-list';
 import { ErrorAnalysisDialog } from '@/components/dashboard/error-analysis-dialog';
 import { Bot } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const [accounts, setAccounts] = React.useState<Account[]>([]);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [totalSignups, setTotalSignups] = React.useState(0);
   const [errorDialog, setErrorDialog] = React.useState<{ open: boolean; log?: string }>({ open: false });
+  const { toast } = useToast();
 
   const fetchVerifiedAccounts = async () => {
     try {
       const response = await fetch('/api/accounts');
       if (!response.ok) {
-        throw new Error('Failed to fetch accounts');
+        // This will be caught by the .catch block below
+        throw new Error(`Failed to fetch accounts. Status: ${response.status}`);
       }
       const data: Account[] = await response.json();
-      // Merge with existing accounts to preserve in-progress ones not yet in DB
-      setAccounts(prev => {
-        const existingIds = new Set(prev.map(a => a.id));
-        const newAccounts = data.filter(a => !existingIds.has(a.id));
-        return [...prev, ...newAccounts];
-      });
-    } catch (error) {
+      setAccounts(data); // Replace state with the source of truth from DB
+    } catch (error: any) {
       console.error("Error fetching verified accounts:", error);
+      toast({
+        variant: "destructive",
+        title: "Network Error",
+        description: "Could not connect to the backend to fetch accounts. Please ensure the backend server is running."
+      });
     }
   };
 
@@ -49,44 +52,52 @@ export default function Home() {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to start signup process');
+        throw new Error(errorData.detail || 'Failed to start signup process');
       }
 
-      // All good, now listen for SSE updates
       const eventSource = new EventSource('/api/stream-progress');
+      let completedCount = 0;
       
       eventSource.onmessage = (event) => {
         try {
           const progress: ProgressUpdate = JSON.parse(event.data);
+
+          // If it's a failure for a non-existent account, don't add it.
+          if (progress.accountId === -1 && progress.status === 'failed') {
+              console.error("A task failed before account creation:", progress.message);
+              completedCount++;
+              return;
+          }
           
           setAccounts(prev => {
             const existingAccountIndex = prev.findIndex(a => a.id === progress.accountId);
             
             if (existingAccountIndex > -1) {
-              // Update existing account
               return prev.map((acc, index) => 
                 index === existingAccountIndex 
                   ? { ...acc, status: progress.status, errorLog: progress.message } 
                   : acc
               );
             } else {
-              // Add new account
               return [...prev, {
                 id: progress.accountId,
                 email: progress.email,
                 status: progress.status,
                 errorLog: progress.message,
-                full_name: progress.email.split('@')[0], // Derive from email for display
+                full_name: progress.email.split('@')[0], 
               }];
             }
           });
 
-          // Check if all initial accounts have reported a final status
-          if (accounts.length >= count && accounts.every(a => ['verified', 'failed'].includes(a.status))) {
-             eventSource.close();
-             setIsProcessing(false);
-             // Final refresh of accounts from DB
-             fetchVerifiedAccounts();
+          // Check for completion
+          if (['verified', 'failed'].includes(progress.status)) {
+            completedCount++;
+            if (completedCount >= count) {
+              eventSource.close();
+              setIsProcessing(false);
+              // Final refresh of accounts from DB after a short delay
+              setTimeout(() => fetchVerifiedAccounts(), 1000);
+            }
           }
 
         } catch (e) {
@@ -98,22 +109,21 @@ export default function Home() {
         console.error('EventSource failed:', err);
         eventSource.close();
         setIsProcessing(false);
+        toast({
+            variant: "destructive",
+            title: "Connection Lost",
+            description: "Lost connection to the progress stream. Please check the backend."
+        });
       };
 
-      // Optional: Add a timeout to stop listening if the process takes too long
-      setTimeout(() => {
-        if (eventSource.readyState !== EventSource.CLOSED) {
-          eventSource.close();
-          setIsProcessing(false);
-          console.log("Stopped listening for updates due to timeout.");
-          fetchVerifiedAccounts(); // fetch final state
-        }
-      }, 5 * 60 * 1000); // 5 minutes timeout
-
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting process:", error);
       setIsProcessing(false);
-      // You could show a toast here
+      toast({
+        variant: "destructive",
+        title: "Process Failed to Start",
+        description: error.message || "An unknown error occurred.",
+      });
     }
   };
 
@@ -121,9 +131,6 @@ export default function Home() {
     setErrorDialog({ open: true, log });
   };
   
-  const verifiedAccounts = accounts.filter(a => a.status === 'verified');
-  const failedAccounts = accounts.filter(a => a.status === 'failed');
-
   return (
     <>
       <main className="container mx-auto p-4 md:p-8">
@@ -139,7 +146,7 @@ export default function Home() {
         <div className="space-y-8">
           <SignupControlPanel onStartProcess={handleStartProcess} isProcessing={isProcessing} />
           {totalSignups > 0 && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
-          <AccountList accounts={[...accounts].sort((a,b) => a.id - b.id)} onTroubleshoot={handleTroubleshoot} />
+          <AccountList accounts={[...accounts].sort((a,b) => (a.id ?? 0) - (b.id ?? 0))} onTroubleshoot={handleTroubleshoot} />
         </div>
       </main>
       <ErrorAnalysisDialog 
