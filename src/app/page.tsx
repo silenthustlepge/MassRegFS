@@ -78,7 +78,7 @@ export default function Home() {
           if (a.id === acc.id) {
             const isSuccess = Math.random() > 0.15; // 85% success rate
             if (isSuccess) {
-              return { ...a, status: 'created', password: `pass_${Math.random().toString(36).slice(-8)}` };
+              return { ...a, status: 'created' };
             } else {
               const randomError = errorMessages[Math.floor(Math.random() * errorMessages.length)];
               return { ...a, status: 'failed', errorLog: `${randomError} for user ${a.username}.` };

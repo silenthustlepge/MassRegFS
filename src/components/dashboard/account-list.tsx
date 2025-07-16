@@ -13,15 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast";
 import * as React from 'react';
 
 interface AccountListProps {
@@ -30,7 +22,7 @@ interface AccountListProps {
 }
 
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
-  const [selectedAccount, setSelectedAccount] = React.useState<Account | null>(null);
+  const { toast } = useToast();
 
   if (accounts.length === 0) {
     return (
@@ -49,14 +41,23 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
     );
   }
 
-  const handleLoginClick = (account: Account) => {
-    if (account.username && account.password && account.access_token && account.refresh_token) {
-      const loginUrl = `/login-loader.html?email=${encodeURIComponent(account.username)}&password=${encodeURIComponent(account.password)}&access_token=${encodeURIComponent(account.access_token)}&refresh_token=${encodeURIComponent(account.refresh_token)}`;
-      window.open(loginUrl, '_blank');
-    } else {
+  const handleLoginClick = async (account: Account) => {
+    // The button is disabled if these are missing, but this is a safeguard.
+    if (!account.access_token || !account.refresh_token) {
       console.error("Missing login details for account", account);
-      // Optionally show a user-friendly error message
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "Access or refresh token is missing for this account.",
+      });
+      return;
     }
+
+    // Generate the loader URL with the tokens
+    const loginLoaderUrl = `/login-loader.html?access_token=${encodeURIComponent(account.access_token)}&refresh_token=${encodeURIComponent(account.refresh_token)}`;
+    
+    // Open the new tab
+    window.open(loginLoaderUrl, '_blank');
   };
 
   const getStatusBadge = (status: Account['status']) => {
@@ -87,54 +88,39 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                   <TableHead>Username</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
-                </TableRow> 
+                </TableRow>
               </TableHeader>
               <TableBody>
-                {accounts.map((account) => (
-                  <TableRow key={account.id}>
-                    <TableCell className="font-medium">{account.id}</TableCell>
-                    <TableCell>{account.username}</TableCell>
-                    <TableCell>{getStatusBadge(account.status)}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {account.status === 'failed' && account.errorLog && (
-                        <Button variant="outline" size="sm" onClick={() => onTroubleshoot(account.errorLog!)}>
-                          <Wrench className="mr-2 h-4 w-4" />
-                          Analyze Error
-                        </Button>
-                      )}
-                      {account.status === 'verified' && (
-                         <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)}>
-                          <LogIn className="mr-2 h-4 w-4" />
-                          Login
-                         </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {accounts.map((account) => {
+                  const isLoginReady = account.status === 'verified' && account.access_token && account.refresh_token;
+                  
+                  return (
+                    <TableRow key={account.id}>
+                      <TableCell className="font-medium">{account.id}</TableCell>
+                      <TableCell>{account.username}</TableCell>
+                      <TableCell>{getStatusBadge(account.status)}</TableCell>
+                      <TableCell className="text-right space-x-2">
+                        {account.status === 'failed' && account.errorLog && (
+                          <Button variant="outline" size="sm" onClick={() => onTroubleshoot(account.errorLog as string)}>
+                            <Wrench className="mr-2 h-4 w-4" />
+                            Analyze Error
+                          </Button>
+                        )}
+                        {account.status === 'verified' && (
+                          <Button variant="ghost" size="sm" onClick={() => handleLoginClick(account)} disabled={!isLoginReady}>
+                            <LogIn className="mr-2 h-4 w-4" />
+                            Login
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
-      
-      <AlertDialog open={!!selectedAccount} onOpenChange={(open) => !open && setSelectedAccount(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader> 
-            <AlertDialogTitle className="font-headline">Login Information</AlertDialogTitle>
-            <AlertDialogDescription>
-              Use these credentials to log in. This information is for demonstration purposes.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="text-sm space-y-2 font-mono"> 
-            <div><strong>Username:</strong> {selectedAccount?.username}</div>
-            <div><strong>Password:</strong> {selectedAccount?.password || 'N/A'}</div>
-            <div><strong>Token:</strong> <span className="bg-muted px-1 py-0.5 rounded">{selectedAccount?.token || 'N/A'}</span></div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setSelectedAccount(null)}>Close</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
