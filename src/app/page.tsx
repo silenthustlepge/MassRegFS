@@ -52,7 +52,7 @@ export default function Home() {
     setAccounts([]);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/start-signups?count=${count}`, { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/start-signups?count=${count}`, { method: 'POST' });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to start signup process');
