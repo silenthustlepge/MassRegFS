@@ -58,7 +58,7 @@ export default function Home() {
         throw new Error(errorData.detail || 'Failed to start signup process');
       }
 
-      const eventSource = new EventSource(`${API_BASE_URL}/api/stream-progress`);
+      const eventSource = new EventSource(`${API_BASE_URL}/stream-progress`);
       let completedCount = 0;
       
       eventSource.onmessage = (event) => {
