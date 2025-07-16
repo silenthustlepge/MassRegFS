@@ -215,18 +215,40 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
                     logger.warning(f"Verification attempt {attempt + 1} failed for {email}: {str(e)}, retrying...")
                     await asyncio.sleep(retry_delay)
 
-        # 10. Extract Tokens
+        # 10. Extract Tokens with enhanced parsing
+        logger.info(f"Extracting tokens from redirect URL for {email}")
         parsed_url = urlparse(redirect_location)
-        if not parsed_url.fragment:
-             raise Exception("Redirect URL missing fragment with tokens")
-
-        fragment_params = parse_qs(parsed_url.fragment)
-        access_token = fragment_params.get('access_token', [None])[0]
-        refresh_token = fragment_params.get('refresh_token', [None])[0]
+        
+        access_token = None
+        refresh_token = None
+        
+        # Try extracting from fragment first (most common)
+        if parsed_url.fragment:
+            fragment_params = parse_qs(parsed_url.fragment)
+            access_token = fragment_params.get('access_token', [None])[0]
+            refresh_token = fragment_params.get('refresh_token', [None])[0]
+            
+        # If not found in fragment, try query parameters
+        if not access_token and parsed_url.query:
+            query_params = parse_qs(parsed_url.query)
+            access_token = query_params.get('access_token', [None])[0]
+            refresh_token = query_params.get('refresh_token', [None])[0]
+            
+        # If still not found, try alternative parameter names
+        if not access_token and parsed_url.fragment:
+            fragment_params = parse_qs(parsed_url.fragment)
+            access_token = fragment_params.get('token', [None])[0]  # Some systems use 'token'
+            refresh_token = fragment_params.get('refresh', [None])[0]  # Some systems use 'refresh'
 
         if not access_token or not refresh_token:
-            raise Exception("Failed to extract access and refresh tokens from redirect URL")
+            logger.error(f"Token extraction failed for {email}. Redirect URL: {redirect_location}")
+            logger.error(f"Fragment: {parsed_url.fragment}")
+            logger.error(f"Query: {parsed_url.query}")
+            raise Exception(f"Failed to extract access and refresh tokens from redirect URL: {redirect_location}")
+            
         logger.info(f"Successfully extracted tokens for {email}")
+        logger.debug(f"Access token length: {len(access_token) if access_token else 0}")
+        logger.debug(f"Refresh token length: {len(refresh_token) if refresh_token else 0}")
 
         # 11. Update Account record in DB
         account.status = 'verified'
