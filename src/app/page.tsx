@@ -10,8 +10,8 @@ import { ErrorAnalysisDialog } from '@/components/dashboard/error-analysis-dialo
 import { Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// The backend server runs on port 8000
-const API_BASE_URL = 'https://e2201c8c-46f3-41c2-a0f6-d470b3e0403c.preview.emergentagent.com';
+// Use environment variable for backend URL
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
 export default function Home() {
   const [accounts, setAccounts] = React.useState<Account[]>([]);
