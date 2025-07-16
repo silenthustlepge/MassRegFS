@@ -160,17 +160,60 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
         }))
         logger.info(f"Verifying account for {email}")
         
-        # 9. Verify Account by making GET request
-        async with aiohttp.ClientSession() as session:
-            async with session.get(verification_link, allow_redirects=False) as response:
-                if response.status != 302:
-                     error_body = await response.text()
-                     raise Exception(f"Verification link did not return 302 redirect. Status: {response.status}. Body: {error_body}")
-
-                redirect_location = response.headers.get('Location')
-                if not redirect_location:
-                    raise Exception("Verification link did not provide a redirect location")
-                logger.debug(f"Redirect location for {email}: {redirect_location}")
+        # 9. Verify Account by making GET request with retries
+        max_retries = 3
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Verification attempt {attempt + 1}/{max_retries} for {email}")
+                
+                async with aiohttp.ClientSession() as session:
+                    # Add proper headers to mimic a real browser
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Encoding': 'gzip, deflate',
+                        'DNT': '1',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                    }
+                    
+                    async with session.get(verification_link, allow_redirects=False, headers=headers, timeout=30) as response:
+                        logger.info(f"Verification response status: {response.status}")
+                        
+                        if response.status == 302:
+                            redirect_location = response.headers.get('Location')
+                            if redirect_location:
+                                logger.info(f"Successful verification for {email}, redirect: {redirect_location[:100]}...")
+                                break
+                            else:
+                                raise Exception("Verification link did not provide a redirect location")
+                        elif response.status == 200:
+                            # Some systems return 200 with redirect in body
+                            body = await response.text()
+                            # Look for redirect in JavaScript or meta tags
+                            redirect_match = re.search(r'(?:window\.location\.href|document\.location)\s*=\s*["\']([^"\']+)["\']', body)
+                            if not redirect_match:
+                                redirect_match = re.search(r'<meta[^>]+http-equiv=["\']refresh["\'][^>]+content=["\'][^;]+;\s*url=([^"\']+)["\']', body)
+                            
+                            if redirect_match:
+                                redirect_location = redirect_match.group(1)
+                                logger.info(f"Found redirect in body for {email}: {redirect_location[:100]}...")
+                                break
+                            else:
+                                raise Exception(f"Verification returned 200 but no redirect found. Body: {body[:200]}...")
+                        else:
+                            error_body = await response.text()
+                            raise Exception(f"Verification link returned status {response.status}. Body: {error_body[:200]}...")
+                            
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise Exception(f"Verification failed after {max_retries} attempts: {str(e)}")
+                else:
+                    logger.warning(f"Verification attempt {attempt + 1} failed for {email}: {str(e)}, retrying...")
+                    await asyncio.sleep(retry_delay)
 
         # 10. Extract Tokens
         parsed_url = urlparse(redirect_location)
