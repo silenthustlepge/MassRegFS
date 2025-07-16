@@ -46,8 +46,6 @@ export default function Home() {
 
     setIsProcessing(true);
     setTotalSignups(count);
-    // Clear the list for a new run
-    setAccounts([]);
     
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
