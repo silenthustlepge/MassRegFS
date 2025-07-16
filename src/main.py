@@ -115,7 +115,7 @@ def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
     try:
         logger.info("Fetching all accounts from the database.")
-        accounts = db.execute(
+        result = db.execute(
             select(
                 Account.id,
                 Account.email,
@@ -123,7 +123,8 @@ def get_all_accounts(db: Session = Depends(get_db)):
                 Account.status,
                 Account.error_log.label("errorLog")
             )
-        ).mappings().all()
+        )
+        accounts = result.mappings().all()
         logger.info(f"Successfully fetched {len(accounts)} accounts.")
         return accounts
     except Exception as e:
@@ -137,10 +138,11 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
     logger.info(f"Fetching login details for account_id: {account_id}")
     try:
-        account = db.execute(
+        result = db.execute(
             select(Account.access_token, Account.refresh_token, Account.status)
             .where(Account.id == account_id)
-        ).first()
+        )
+        account = result.first()
 
         if not account:
             logger.warning(f"Account not found for id: {account_id}")

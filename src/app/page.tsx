@@ -68,20 +68,23 @@ export default function Home() {
             
             if (existingAccountIndex > -1) {
               // Update existing account
-              return prev.map((acc, index) => 
-                index === existingAccountIndex 
-                  ? { ...acc, status: progress.status, errorLog: progress.message } 
-                  : acc
-              );
+              const newAccounts = [...prev];
+              newAccounts[existingAccountIndex] = {
+                 ...newAccounts[existingAccountIndex], 
+                 status: progress.status, 
+                 errorLog: progress.message 
+              };
+              return newAccounts;
             } else if (progress.accountId !== -1) {
               // Add new account
-              return [...prev, {
+              const newAccount: Account = {
                 id: progress.accountId,
                 email: progress.email,
                 status: progress.status,
                 errorLog: progress.message,
-                full_name: progress.email.split('@')[0], // Placeholder name
-              }];
+                full_name: progress.full_name,
+              };
+              return [...prev, newAccount];
             }
             return prev;
           });
