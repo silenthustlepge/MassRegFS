@@ -9,12 +9,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import SessionLocal, engine, Account, create_db_tables
-from .worker import signup_and_verify_account
-from .temp_mail_client import TempMailClient
-from .config import TEMP_MAIL_API_BASE_URL
-from .schemas import Account as AccountSchema
-from .logging_config import logger # Import the configured logger
+from database import SessionLocal, engine, Account, create_db_tables
+from worker import signup_and_verify_account
+from temp_mail_client import TempMailClient
+from config import TEMP_MAIL_API_BASE_URL
+from schemas import Account as AccountSchema
+from logging_config import logger # Import the configured logger
 
 # Initialize database tables on startup
 create_db_tables()
