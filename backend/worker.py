@@ -132,6 +132,10 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
                         if match:
                             potential_link = match.group(1)
                             
+                            # Store the verification link in the database for manual verification
+                            account.verification_link = potential_link
+                            db.commit()
+                            
                             # If it's a direct supabase link, use it
                             if 'supabase.co' in potential_link and '/auth/v1/verify' in potential_link:
                                 verification_link = potential_link
