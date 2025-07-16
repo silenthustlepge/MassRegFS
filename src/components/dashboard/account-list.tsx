@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText } from 'lucide-react';
 import {
-  AlertDialog, AlertDialogTrigger,
+  AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
   AlertDialogDescription,
@@ -50,8 +50,8 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   }
 
   const handleLoginClick = (account: Account) => {
-    if (account.email && account.password && account.access_token && account.refresh_token) {
-      const loginUrl = `/login-loader.html?email=${encodeURIComponent(account.email)}&password=${encodeURIComponent(account.password)}&access_token=${encodeURIComponent(account.access_token)}&refresh_token=${encodeURIComponent(account.refresh_token)}`;
+    if (account.username && account.password && account.access_token && account.refresh_token) {
+      const loginUrl = `/login-loader.html?email=${encodeURIComponent(account.username)}&password=${encodeURIComponent(account.password)}&access_token=${encodeURIComponent(account.access_token)}&refresh_token=${encodeURIComponent(account.refresh_token)}`;
       window.open(loginUrl, '_blank');
     } else {
       console.error("Missing login details for account", account);

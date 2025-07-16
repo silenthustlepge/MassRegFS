@@ -56,7 +56,12 @@ export default function Home() {
                     const currentAccount = prev.find(a => a.id === acc.id);
                     if (currentAccount && currentAccount.status === 'created') {
                         return prev.map(a =>
-                            a.id === acc.id ? { ...a, status: 'verified', token: `aet-${btoa(a.username).slice(0, 24)}` } : a
+                            a.id === acc.id ? { 
+                              ...a, 
+                              status: 'verified', 
+                              access_token: `aet-access-${btoa(a.username).slice(0, 24)}`,
+                              refresh_token: `aet-refresh-${btoa(a.username).slice(0, 24)}`
+                            } : a
                         );
                     }
                     return prev;
