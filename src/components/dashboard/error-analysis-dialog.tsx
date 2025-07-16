@@ -50,7 +50,7 @@ export function ErrorAnalysisDialog({ errorLog, open, onOpenChange }: ErrorAnaly
         <div className="space-y-6 py-4">
           <div>
             <h3 className="font-semibold mb-2 text-sm text-muted-foreground">Original Error Log:</h3>
-            <pre className="bg-muted p-3 rounded-md text-xs font-code whitespace-pre-wrap">
+            <pre className="bg-muted p-3 rounded-md text-xs font-mono whitespace-pre-wrap">
               <code>{errorLog || 'No error log provided.'}</code>
             </pre>
           </div>

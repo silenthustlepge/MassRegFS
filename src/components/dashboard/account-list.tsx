@@ -89,7 +89,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                       {account.status === 'failed' && account.errorLog && (
                         <Button variant="outline" size="sm" onClick={() => onTroubleshoot(account.errorLog!)}>
                           <Wrench className="mr-2 h-4 w-4" />
-                          Troubleshoot
+                          Analyze Error
                         </Button>
                       )}
                       {(account.status === 'created' || account.status === 'verified') && (
@@ -115,7 +115,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
               Use these credentials to log in. This information is for demonstration purposes.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="text-sm space-y-2 font-code">
+          <div className="text-sm space-y-2 font-mono">
             <div><strong>Username:</strong> {selectedAccount?.username}</div>
             <div><strong>Password:</strong> {selectedAccount?.password || 'N/A'}</div>
             <div><strong>Token:</strong> <span className="bg-muted px-1 py-0.5 rounded">{selectedAccount?.token || 'N/A'}</span></div>
