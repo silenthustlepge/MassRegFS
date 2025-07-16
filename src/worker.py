@@ -37,6 +37,7 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
 
         # 2. Generate data
         full_name = fake.name()
+        # Generate a temporary password in memory, never store it in the database
         password = fake.password(length=12, special_chars=True, digits=True, upper_case=True, lower_case=True)
         logger.debug(f"Generated data for {email}")
 

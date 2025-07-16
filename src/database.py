@@ -23,7 +23,6 @@ class Account(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    password = Column(String, nullable=False) # This will no longer be used to store passwords long-term
     full_name = Column(String)
     status = Column(String, default="pending")
     access_token = Column(Text)
