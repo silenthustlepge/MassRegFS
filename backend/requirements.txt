@@ -1,0 +1,10 @@
+
+fastapi
+uvicorn
+sqlalchemy
+faker
+aiohttp
+python-dotenv
+loguru
+requests
+sseclient-py
