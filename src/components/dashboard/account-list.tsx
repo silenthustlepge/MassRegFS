@@ -35,7 +35,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
     setCopyingLinks(prev => new Set(prev).add(account.id));
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/account/${account.id}/verification-link`);
+      const response = await fetch(`${API_BASE_URL}/account/${account.id}/verification-link`);
       const result = await response.json();
       
       if (!response.ok) {
