@@ -70,7 +70,8 @@ async def start_signups(count: int, background_tasks: BackgroundTasks):
             logger.info(f"Scheduling signup task {i+1}/{count}")
             # The worker is now responsible for its own DB session.
             background_tasks.add_task(signup_and_verify_account, temp_mail_client, progress_queue)
-            await asyncio.sleep(0.1)
+            # Add longer delay between account creation to avoid overwhelming services
+            await asyncio.sleep(5)  # Increased from 0.1 to 5 seconds
 
 
     background_tasks.add_task(run_signups)
