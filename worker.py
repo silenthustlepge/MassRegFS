@@ -5,7 +5,7 @@ from faker import Faker
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, quote
 import traceback
 
 
@@ -67,7 +67,8 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
                 "apikey": SUPABASE_API_KEY,
                 "Content-Type": "application/json;charset=UTF-8"
             }
-            signup_url_with_redirect = f"{SUPABASE_URL}?redirect_to={aiohttp.helpers.quote(REDIRECT_TO)}"
+            # Correctly encode the redirect URL parameter
+            signup_url_with_redirect = f"{SUPABASE_URL}?redirect_to={quote(REDIRECT_TO)}"
 
             async with session.post(signup_url_with_redirect, json=signup_payload, headers=headers) as response:
                 if not response.ok:
