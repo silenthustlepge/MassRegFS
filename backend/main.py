@@ -123,16 +123,24 @@ def get_account_verification_link(account_id: int, db: Session = Depends(get_db)
             logger.warning(f"Account not found for id: {account_id}")
             raise HTTPException(status_code=404, detail="Account not found.")
 
-        # For accounts that are pending or failed, we'll try to get the verification link
-        # This would need to be stored in the database when the email is received
-        # For now, we'll return a placeholder indicating manual verification is needed
-        
-        return {
-            "message": "Please check your email for the verification link",
-            "email": account.email,
-            "status": account.status,
-            "instructions": "Click the confirmation link in your email to verify your account."
-        }
+        # Check if we have a stored verification link
+        if account.verification_link:
+            logger.info(f"Found verification link for account {account_id}")
+            return {
+                "verification_link": account.verification_link,
+                "email": account.email,
+                "status": account.status,
+                "message": "Verification link found"
+            }
+        else:
+            # No verification link available
+            logger.warning(f"No verification link available for account {account_id}")
+            return {
+                "verification_link": None,
+                "email": account.email,
+                "status": account.status,
+                "message": "No verification link available. Please check your email or wait for the signup process to complete."
+            }
 
     except Exception as e:
         logger.exception(f"Error fetching verification link for account {account_id}")
