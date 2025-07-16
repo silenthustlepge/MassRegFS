@@ -108,7 +108,7 @@ def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
     try:
         logger.info("Fetching all accounts from the database.")
-        accounts = db.execute(
+        results = db.execute(
             select(
                 Account.id,
                 Account.email,
@@ -116,7 +116,17 @@ def get_all_accounts(db: Session = Depends(get_db)):
                 Account.status,
                 Account.error_log.label("errorLog")
             )
-        ).mappings().all()
+        ).all()
+        # Manually map results to dictionaries
+        accounts = [
+            {
+                "id": r.id, 
+                "email": r.email, 
+                "full_name": r.full_name, 
+                "status": r.status, 
+                "errorLog": r.errorLog
+            } for r in results
+        ]
         logger.info(f"Successfully fetched {len(accounts)} accounts.")
         return accounts
     except Exception as e:

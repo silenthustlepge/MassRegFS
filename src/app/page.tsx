@@ -71,7 +71,6 @@ export default function Home() {
                  ...newAccounts[existingAccountIndex], 
                  status: progress.status, 
                  errorLog: progress.message,
-                 // Ensure full_name is present
                  full_name: progress.full_name || newAccounts[existingAccountIndex].full_name,
               };
               return newAccounts;
