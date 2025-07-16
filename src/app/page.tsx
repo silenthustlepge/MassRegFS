@@ -21,7 +21,8 @@ export default function Home() {
     try {
       const response = await fetch('/api/accounts');
       if (!response.ok) {
-        throw new Error(`Failed to fetch accounts. Status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch accounts. Status: ${response.status}. Message: ${errorText}`);
       }
       const data: Account[] = await response.json();
       setAccounts(data);
@@ -30,7 +31,7 @@ export default function Home() {
       toast({
         variant: "destructive",
         title: "Network Error",
-        description: "Could not connect to the backend to fetch accounts. Please ensure the backend server is running and the database is accessible."
+        description: error.message || "Could not connect to the backend to fetch accounts. Please ensure the backend server is running."
       });
     }
   };
@@ -45,7 +46,6 @@ export default function Home() {
 
     setIsProcessing(true);
     setTotalSignups(count);
-    // Don't clear accounts, let the SSE stream update the state
     
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
@@ -60,30 +60,19 @@ export default function Home() {
       eventSource.onmessage = (event) => {
         try {
           const progress: ProgressUpdate = JSON.parse(event.data);
-
-          if (progress.accountId === -1 && progress.status === 'failed') {
-              console.error("A task failed before account creation:", progress.message);
-              // We don't have an ID, so we can't add it to the list.
-              // A toast could be shown here if desired.
-              completedCount++;
-              if (completedCount >= count) {
-                 eventSource.close();
-                 setIsProcessing(false);
-                 setTimeout(() => fetchAccounts(), 1000);
-              }
-              return;
-          }
           
           setAccounts(prev => {
             const existingAccountIndex = prev.findIndex(a => a.id === progress.accountId);
             
             if (existingAccountIndex > -1) {
+              // Update existing account
               return prev.map((acc, index) => 
                 index === existingAccountIndex 
                   ? { ...acc, status: progress.status, errorLog: progress.message } 
                   : acc
               );
-            } else {
+            } else if (progress.accountId !== -1) {
+              // Add new account
               return [...prev, {
                 id: progress.accountId,
                 email: progress.email,
@@ -92,14 +81,18 @@ export default function Home() {
                 full_name: progress.email.split('@')[0], // Placeholder name
               }];
             }
+            // If accountId is -1 (a pre-creation failure), we don't add it to the list.
+            // A toast or log could appear here if desired.
+            return prev;
           });
 
-          if (['verified', 'failed'].includes(progress.status)) {
+          if (['verified', 'failed'].includes(progress.status) || progress.accountId === -1) {
             completedCount++;
             if (completedCount >= count) {
               eventSource.close();
               setIsProcessing(false);
-              setTimeout(() => fetchAccounts(), 1000); // Final refresh
+              // Fetch final state from DB to ensure consistency
+              setTimeout(() => fetchAccounts(), 1000); 
             }
           }
 

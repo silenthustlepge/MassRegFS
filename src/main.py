@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import List
+from typing import List, Optional
 
 from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -12,6 +12,7 @@ from database import SessionLocal, engine, Account, Base
 from worker import signup_and_verify_account
 from temp_mail_client import TempMailClient
 from config import TEMP_MAIL_API_BASE_URL, TEMP_MAIL_DOMAINS
+from schemas import Account as AccountSchema # Import pydantic schema
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -84,33 +85,20 @@ async def stream_progress():
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-@app.get("/api/accounts", response_model=List[dict])
+@app.get("/api/accounts", response_model=List[AccountSchema])
 def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
-    accounts = db.execute(
-        select(
-            Account.id,
-            Account.email,
-            Account.full_name,
-            Account.status,
-            Account.error_log
-        )
-    ).fetchall()
-    return [
-        {"id": acc.id, "email": acc.email, "full_name": acc.full_name, "status": acc.status, "errorLog": acc.error_log}
-        for acc in accounts
-    ]
+    accounts = db.query(Account).all()
+    # Pydantic will automatically handle the conversion, including missing/null values
+    return accounts
 
 
 @app.get("/api/account/{account_id}/login-details")
 def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
-    account = db.execute(
-        select(Account.access_token, Account.refresh_token)
-        .where(Account.id == account_id, Account.status == 'verified')
-    ).first()
+    account = db.query(Account).filter(Account.id == account_id).first()
 
-    if account and account.access_token:
+    if account and account.access_token and account.status == 'verified':
         return {"access_token": account.access_token, "refresh_token": account.refresh_token}
     else:
         raise HTTPException(status_code=404, detail="Account not found or not verified.")
