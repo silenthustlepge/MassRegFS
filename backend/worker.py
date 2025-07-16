@@ -8,10 +8,10 @@ import json
 from urllib.parse import parse_qs, urlparse, quote
 import traceback
 
-from .database import Account, SessionLocal
-from .temp_mail_client import TempMailClient
-from .config import TEMP_MAIL_DOMAINS
-from .logging_config import logger
+from database import Account, SessionLocal
+from temp_mail_client import TempMailClient
+from config import TEMP_MAIL_DOMAINS
+from logging_config import logger
 
 # Supabase details
 SUPABASE_URL = "https://snksxwkyumhdykyrhhch.supabase.co/auth/v1/signup"
