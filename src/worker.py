@@ -36,9 +36,11 @@ async def signup_and_verify_account(temp_mail_client: TempMailClient, sse_queue:
         username = fake.user_name().lower().replace(".", "") # Ensure username is simple
         domain = fake.random_element(elements=TEMP_MAIL_DOMAINS)
         email_data = await temp_mail_client.generate_email(name=username, domain=domain)
+        
+        if not email_data or not email_data.get("email"):
+            raise Exception("Failed to generate temporary email from API")
+        
         email = email_data.get("email")
-        if not email:
-            raise Exception("Failed to generate temporary email")
         logger.info(f"Generated email: {email}")
 
         # 2. Generate data
