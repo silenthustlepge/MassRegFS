@@ -9,15 +9,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import SessionLocal, engine, Account, Base
+from database import SessionLocal, engine, Account, Base, create_db_tables
 from worker import signup_and_verify_account
 from temp_mail_client import TempMailClient
-from config import TEMP_MAIL_API_BASE_URL, TEMP_MAIL_DOMAINS
+from config import TEMP_MAIL_API_BASE_URL
 from schemas import Account as AccountSchema
 from logging_config import logger # Import the configured logger
 
 # Initialize database tables
-Base.metadata.create_all(bind=engine)
+create_db_tables()
 
 app = FastAPI()
 
@@ -53,17 +53,13 @@ temp_mail_client = TempMailClient(base_url=TEMP_MAIL_API_BASE_URL)
 progress_queue = asyncio.Queue()
 
 def get_db():
-    logger.debug("Creating new database session.")
+    logger.debug("Creating new database session for request.")
     db = SessionLocal()
     try:
         yield db
     finally:
-        logger.debug("Closing database session.")
+        logger.debug("Closing database session for request.")
         db.close()
-
-async def send_progress_update(data: dict):
-    """Pushes a progress update to the SSE queue."""
-    await progress_queue.put(json.dumps(data))
 
 @app.post("/api/start-signups")
 async def start_signups(count: int, background_tasks: BackgroundTasks):
@@ -72,7 +68,7 @@ async def start_signups(count: int, background_tasks: BackgroundTasks):
     async def run_signups():
         for i in range(count):
             logger.info(f"Scheduling signup task {i+1}/{count}")
-            # The worker (signup_and_verify_account) is now responsible for creating and closing its own session.
+            # The worker is now responsible for creating and closing its own session.
             background_tasks.add_task(signup_and_verify_account, temp_mail_client, progress_queue)
             # Give a slight delay between starting tasks to avoid overwhelming
             await asyncio.sleep(0.1)
@@ -108,15 +104,18 @@ def get_all_accounts(db: Session = Depends(get_db)):
     """Fetches all accounts from the database."""
     try:
         logger.info("Fetching all accounts from the database.")
-        accounts = db.query(
+        # CRITICAL FIX: Select only the columns defined in AccountSchema to prevent ValidationError
+        stmt = select(
             Account.id,
             Account.email,
             Account.full_name,
             Account.status,
-            Account.error_log.label("errorLog")
-        ).all()
-        logger.info(f"Successfully fetched {len(accounts)} accounts.")
-        return accounts
+            Account.error_log.label("errorLog") # Use label to match schema field name
+        ).order_by(Account.id.desc())
+        
+        results = db.execute(stmt).mappings().all()
+        logger.info(f"Successfully fetched {len(results)} accounts.")
+        return results
     except Exception as e:
         logger.exception("Failed to fetch accounts from database.")
         # Re-raise as HTTPException to be handled by FastAPI's error handling
@@ -128,7 +127,8 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
     """Fetches login tokens for a specific account."""
     logger.info(f"Fetching login details for account_id: {account_id}")
     try:
-        account = db.query(Account).filter(Account.id == account_id).first()
+        stmt = select(Account.access_token, Account.refresh_token, Account.status).where(Account.id == account_id)
+        account = db.execute(stmt).first()
 
         if not account:
             logger.warning(f"Account not found for id: {account_id}")

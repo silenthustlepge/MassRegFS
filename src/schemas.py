@@ -7,3 +7,6 @@ class Account(BaseModel):
     full_name: Optional[str] = None
     status: str
     errorLog: Optional[str] = None
+
+    class Config:
+        from_attributes = True

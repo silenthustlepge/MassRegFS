@@ -1,6 +1,5 @@
 import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
@@ -23,15 +22,16 @@ class Account(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    full_name = Column(String)
+    full_name = Column(String, nullable=True)
     status = Column(String, default="pending")
-    access_token = Column(Text)
-    refresh_token = Column(Text)
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
     error_log = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Function to create tables
 def create_db_tables():
+    """Creates the database tables if they don't exist."""
     Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
