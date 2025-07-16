@@ -1,16 +1,11 @@
 import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 import os
 
 DATABASE_FILE = "accounts.db"
 DATABASE_URL = f"sqlite:///./{DATABASE_FILE}"
-
-# THIS IS A TEMPORARY FIX to ensure the database is always up to date.
-# In a real production scenario, you would use a migration tool like Alembic.
-if os.path.exists(DATABASE_FILE):
-    os.remove(DATABASE_FILE)
-
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -29,7 +24,6 @@ class Account(Base):
     error_log = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-# Function to create tables
 def create_db_tables():
     """Creates the database tables if they don't exist."""
     Base.metadata.create_all(bind=engine)

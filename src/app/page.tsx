@@ -46,8 +46,6 @@ export default function Home() {
 
     setIsProcessing(true);
     setTotalSignups(count);
-    // Clear out any failed or pending accounts from previous runs for a clean slate.
-    setAccounts(prev => prev.filter(acc => acc.status === 'verified'));
     
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
