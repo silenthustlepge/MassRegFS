@@ -22,8 +22,8 @@ interface AccountListProps {
   onTroubleshoot: (errorLog: string) => void;
 }
 
-// Use environment variable for backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+// Use relative path for API calls - Kubernetes ingress handles routing
+const API_BASE_URL = '/api';
 
 export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
   const { toast } = useToast();
