@@ -6,6 +6,7 @@ from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal, engine, Account, Base
 from worker import signup_and_verify_account
@@ -16,6 +17,16 @@ from config import TEMP_MAIL_API_BASE_URL, TEMP_MAIL_DOMAINS
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 
 # Initialize TempMailClient
 temp_mail_client = TempMailClient(base_url=TEMP_MAIL_API_BASE_URL)
@@ -40,10 +51,15 @@ async def start_signups(count: int, background_tasks: BackgroundTasks, db: Sessi
     async def run_signups():
         for _ in range(count):
             # Get a new DB session for each worker task
-            async with SessionLocal() as db_session:
-                 background_tasks.add_task(signup_and_verify_account, db_session, temp_mail_client, progress_queue)
-                 # Give a slight delay between starting tasks to avoid overwhelming
-                 await asyncio.sleep(0.1) # Adjust as needed
+            db_session = SessionLocal()
+            try:
+                background_tasks.add_task(signup_and_verify_account, db_session, temp_mail_client, progress_queue)
+                # Give a slight delay between starting tasks to avoid overwhelming
+                await asyncio.sleep(0.1) # Adjust as needed
+            finally:
+                # The worker task is responsible for closing the session
+                pass
+
 
     background_tasks.add_task(run_signups)
 
@@ -86,7 +102,7 @@ def get_account_login_details(account_id: int, db: Session = Depends(get_db)):
         .where(Account.id == account_id)
     ).first()
 
-    if account:
+    if account and account.access_token:
         return {"access_token": account.access_token, "refresh_token": account.refresh_token}
     else:
         raise HTTPException(status_code=404, detail="Account not found or not verified.")
