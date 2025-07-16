@@ -4,7 +4,7 @@
 import type { Account } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Users, UserPlus, UserCheck, UserX } from 'lucide-react';
+import { Users, UserCheck, UserX } from 'lucide-react';
 
 interface ProgressDashboardProps {
   accounts: Account[];
@@ -19,15 +19,20 @@ export function ProgressDashboard({ accounts, totalSignups }: ProgressDashboardP
   const failedCount = accounts.filter(a => a.status === 'failed').length;
 
   const totalProgress = totalSignups > 0 ? (attemptedCount / totalSignups) * 100 : 0;
+  
   // We consider a successful creation one that is not in a failed state
   const successfulCreations = attemptedCount - failedCount;
-  // Verified progress is out of the accounts that were successfully attempted (not failed)
-  const verifiedProgress = successfulCreations > 0 ? (verifiedCount / successfulCreations) * 100 : 0;
+  
+  // Verified progress is out of the accounts that were attempted
+  const verifiedProgress = totalSignups > 0 ? (verifiedCount / totalSignups) * 100 : 0;
+  
+  const failureProgress = totalSignups > 0 ? (failedCount / totalSignups) * 100 : 0;
+
 
   const metrics = [
     { title: 'Overall Progress', count: attemptedCount, progress: totalProgress, Icon: Users, description: `${attemptedCount} of ${totalSignups} attempts started`},
-    { title: 'Accounts Verified', count: verifiedCount, progress: verifiedProgress, Icon: UserCheck, description: successfulCreations > 0 ? `${verifiedCount} of ${successfulCreations} successful accounts verified` : 'Waiting for successful accounts...'},
-    { title: 'Failures', count: failedCount, progress: totalSignups > 0 ? (failedCount/totalSignups) * 100 : 0, Icon: UserX, description: `${failedCount} of ${totalSignups} attempts failed` }
+    { title: 'Accounts Verified', count: verifiedCount, progress: verifiedProgress, Icon: UserCheck, description: `${verifiedCount} of ${totalSignups} accounts verified` },
+    { title: 'Failures', count: failedCount, progress: failureProgress, Icon: UserX, description: `${failedCount} of ${totalSignups} attempts failed` }
   ];
   
   return (

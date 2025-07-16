@@ -151,7 +151,6 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         account.status = 'verified'
         account.access_token = access_token
         account.refresh_token = refresh_token
-        account.password = "" # Ensure password field is cleared
         db.commit()
         logger.info(f"Account for {email} successfully verified and updated in DB.")
 

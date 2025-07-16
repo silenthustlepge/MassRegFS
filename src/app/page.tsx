@@ -46,10 +46,8 @@ export default function Home() {
 
     setIsProcessing(true);
     setTotalSignups(count);
-    
-    // It's often better to refetch accounts at the start of a new process
-    // to ensure the list is clean and up-to-date.
-    await fetchAccounts();
+    // Clear the list for a new run
+    setAccounts([]);
     
     try {
       const response = await fetch(`/api/start-signups?count=${count}`, { method: 'POST' });
@@ -85,8 +83,6 @@ export default function Home() {
                 full_name: progress.email.split('@')[0], // Placeholder name
               }];
             }
-            // If accountId is -1 (a pre-creation failure), we don't add it to the list.
-            // A toast or log could appear here if desired.
             return prev;
           });
 
@@ -145,7 +141,7 @@ export default function Home() {
         </header>
         <div className="space-y-8">
           <SignupControlPanel onStartProcess={handleStartProcess} isProcessing={isProcessing} />
-          {isProcessing && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
+          {(isProcessing || accounts.length > 0) && <ProgressDashboard accounts={accounts} totalSignups={totalSignups} />}
           <AccountList accounts={accounts} onTroubleshoot={handleTroubleshoot} />
         </div>
       </main>
