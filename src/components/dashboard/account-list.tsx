@@ -100,6 +100,7 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
                 </TableHeader>
                 <TableBody>
                   {sortedAccounts.map((account) => {
+                    if (!account.id) return null; // Prevent rendering if account ID is missing
                     const isLoginReady = account.status === 'verified';
                     const isFailed = account.status === 'failed';
                     
