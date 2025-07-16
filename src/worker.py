@@ -43,7 +43,6 @@ async def signup_and_verify_account(db: Session, temp_mail_client: TempMailClien
         # 3. Create new Account record in DB
         account = Account(
             email=email,
-            password="", # DO NOT STORE PLAINTEXT PASSWORDS
             full_name=full_name,
             status='pending',
             created_at=datetime.utcnow()

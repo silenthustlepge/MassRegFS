@@ -84,8 +84,8 @@ export function AccountList({ accounts, onTroubleshoot }: AccountListProps) {
           {sortedAccounts.length === 0 ? (
              <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
                 <FileText className="h-12 w-12 mb-4" />
-                <p>No accounts to display.</p>
-                <p className="text-sm">Start a new process to see accounts here.</p>
+                <p className="font-semibold">No accounts to display.</p>
+                <p className="text-sm">Use the control panel above to start generating accounts.</p>
               </div>
           ) : (
             <div className="rounded-md border">
