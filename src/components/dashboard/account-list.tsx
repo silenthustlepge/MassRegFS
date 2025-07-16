@@ -13,8 +13,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText, Mail, Send, Check } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, LogIn, Wrench, FileText, Mail, Send, Check, Copy, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface AccountListProps {
   accounts: Account[];
