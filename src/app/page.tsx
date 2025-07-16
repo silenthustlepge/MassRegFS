@@ -21,21 +21,40 @@ export default function Home() {
   const { toast } = useToast();
 
   const fetchAccounts = React.useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/accounts`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch accounts. Status: ${response.status}. Message: ${errorText}`);
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second base delay
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Add delay before first attempt to allow Next.js proxy to initialize
+        if (attempt === 0) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/accounts`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch accounts. Status: ${response.status}. Message: ${errorText}`);
+        }
+        const data: Account[] = await response.json();
+        setAccounts(data);
+        return; // Success, exit retry loop
+      } catch (error: any) {
+        console.error(`Error fetching accounts (attempt ${attempt + 1}):`, error);
+        
+        if (attempt === maxRetries - 1) {
+          // Last attempt failed, show error
+          toast({
+            variant: "destructive",
+            title: "Network Error",
+            description: error.message || "Could not connect to the backend to fetch accounts. Please ensure the backend server is running."
+          });
+        } else {
+          // Wait before retrying with exponential backoff
+          const delay = baseDelay * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-      const data: Account[] = await response.json();
-      setAccounts(data);
-    } catch (error: any) {
-      console.error("Error fetching accounts:", error);
-      toast({
-        variant: "destructive",
-        title: "Network Error",
-        description: error.message || "Could not connect to the backend to fetch accounts. Please ensure the backend server is running."
-      });
     }
   }, [toast]);
 
